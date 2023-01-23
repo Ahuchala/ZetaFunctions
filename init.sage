@@ -1,4 +1,3 @@
-# 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
 load aux_functions.sage
 
 p = 7
