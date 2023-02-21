@@ -31,14 +31,6 @@ fdegree = d
 prec = 2
 Rgens = R.gens()
 
-# eg vertices = [[1,0],[0,1],[0,0]]
-# vertices = f.newton_polytope().vertices()
-# vertices = [[2,0],[0,6],[0,0]]
-# vertices = [[6,0,0],[0,2,0],[0,0,0],[0,0,6]]
-
-# vertices = [[2,0,0],[0,6,0],[0,0,0],[0,0,6]]
-
-# vertices = scale_by_d(d)
 def monomial_to_vector(m):
     return list(R(m).exponents()[0])
 
@@ -129,8 +121,8 @@ def frobenius(g,prec=2):
 def frobenius_on_cohom(i,prec = 2):
     g = B[i]
     g = frobenius(g,prec)
-    return R(g * p^(n-2))
-#     return R(g * p)
+    # return R(g * p^(n-2))
+    return R(g * p)
 
 
 # reduction_dict = {}
