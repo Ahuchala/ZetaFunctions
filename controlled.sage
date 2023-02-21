@@ -4,12 +4,9 @@ from sympy.utilities.iterables import multiset_permutations
 use_macaulay = True
 
 n = 4 #number of variables
-
 p = 7
-
 prec =4
 
-# K = Qp(p,8)
 
 # R.<x,y,z> = QQ[]
 R.<w,x,y,z> = QQ[]
@@ -29,10 +26,10 @@ Rgens = R.gens()
 # f= 2*x_0^3+2*x_0*x_1^2+x_1^3+2*x_0^2*x_2-x_0*x_1*x_2+2*x_1^2*x_2+x_0*x_2^2+2*x_1*x_2^2+x_2^3-x_0^2*x_3-x_0*x_1*x_3-x_0*x_2*x_3+x_1*x_2*x_3+2*x_2^2*x_3+x_0*x_3^2-x_1*x_3^2-x_2*x_3^2+2*x_0^2*x_4+2*x_0*x_1*x_4-x_1^2*x_4-2*x_0*x_2*x_4-x_1*x_2*x_4+2*x_2^2*x_4+x_0*x_4^2-x_1*x_4^2-2*x_2*x_4^2
 f = w^4+2*w*x^3-2*x^4-x^3*y-x^2*y^2-y^4+w^3*z-x^3*z-2*w^2*y*z+2*w*x*y*z-x^2*y*z-w*y^2*z+2*x*y^2*z-2*y^3*z-w^2*z^2-2*w*x*z^2+x^2*z^2-2*w*y*z^2+x*y*z^2+y^2*z^2+2*w*z^3+2*x*z^3-2*y*z^3-2*z^4
 # f = x^3 + y^3 + z^3
-I = R.ideal([f.derivative(_) for _ in R.gens()])# + [f])
+I = R.ideal([f.derivative(_) for _ in R.gens()])
 J = R.quotient(I)
 
-xI = R.ideal([_*f.derivative(_) for _ in R.gens()])# + [f])
+xI = R.ideal([_*f.derivative(_) for _ in R.gens()])
 xJ = R.quotient(xI)
 
 d = f.degree()
@@ -103,13 +100,13 @@ else:
 
         for perm in multiset_permutations(part):
             m = vector_to_monomial(perm)
-    #                 use cached lifts
+    #                 use cached lifts  
             c = xJ(m).lift()
             r = (m-c).lift(xI)
             lift_dict[m] = r
             
 
-
+print('computing cohomology basis')
 def compute_primitive_cohomology():
 
 #     R = QQ[w..z]

@@ -10,12 +10,9 @@ from sympy.utilities.iterables import multiset_permutations
 use_macaulay = True
 
 n = _sage_const_4  #number of variables
-
 p = _sage_const_7 
-
 prec =_sage_const_4 
 
-# K = Qp(p,8)
 
 # R.<x,y,z> = QQ[]
 R = QQ['w, x, y, z']; (w, x, y, z,) = R._first_ngens(4)
@@ -35,10 +32,10 @@ Rgens = R.gens()
 # f= 2*x_0^3+2*x_0*x_1^2+x_1^3+2*x_0^2*x_2-x_0*x_1*x_2+2*x_1^2*x_2+x_0*x_2^2+2*x_1*x_2^2+x_2^3-x_0^2*x_3-x_0*x_1*x_3-x_0*x_2*x_3+x_1*x_2*x_3+2*x_2^2*x_3+x_0*x_3^2-x_1*x_3^2-x_2*x_3^2+2*x_0^2*x_4+2*x_0*x_1*x_4-x_1^2*x_4-2*x_0*x_2*x_4-x_1*x_2*x_4+2*x_2^2*x_4+x_0*x_4^2-x_1*x_4^2-2*x_2*x_4^2
 f = w**_sage_const_4 +_sage_const_2 *w*x**_sage_const_3 -_sage_const_2 *x**_sage_const_4 -x**_sage_const_3 *y-x**_sage_const_2 *y**_sage_const_2 -y**_sage_const_4 +w**_sage_const_3 *z-x**_sage_const_3 *z-_sage_const_2 *w**_sage_const_2 *y*z+_sage_const_2 *w*x*y*z-x**_sage_const_2 *y*z-w*y**_sage_const_2 *z+_sage_const_2 *x*y**_sage_const_2 *z-_sage_const_2 *y**_sage_const_3 *z-w**_sage_const_2 *z**_sage_const_2 -_sage_const_2 *w*x*z**_sage_const_2 +x**_sage_const_2 *z**_sage_const_2 -_sage_const_2 *w*y*z**_sage_const_2 +x*y*z**_sage_const_2 +y**_sage_const_2 *z**_sage_const_2 +_sage_const_2 *w*z**_sage_const_3 +_sage_const_2 *x*z**_sage_const_3 -_sage_const_2 *y*z**_sage_const_3 -_sage_const_2 *z**_sage_const_4 
 # f = x^3 + y^3 + z^3
-I = R.ideal([f.derivative(_) for _ in R.gens()])# + [f])
+I = R.ideal([f.derivative(_) for _ in R.gens()])
 J = R.quotient(I)
 
-xI = R.ideal([_*f.derivative(_) for _ in R.gens()])# + [f])
+xI = R.ideal([_*f.derivative(_) for _ in R.gens()])
 xJ = R.quotient(xI)
 
 d = f.degree()
@@ -115,7 +112,7 @@ else:
             lift_dict[m] = r
             
 
-
+print('computing cohomology basis')
 def compute_primitive_cohomology():
 
 #     R = QQ[w..z]
