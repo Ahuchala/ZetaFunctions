@@ -1,4 +1,9 @@
 using Singular
+using Polyhedra
+# using LazySets
+import GLPK
+lib = DefaultLibrary{Int64}(GLPK.Optimizer)
+# import Singular.lift_std_syz
 
 p = 7
 prec = 3
@@ -40,11 +45,13 @@ for i = 1:n
 	end
 end
 
-println(vertices)
+
 
 function scale_by_d(scale)
 	return [v.*scale for v in vertices]
 end
+
+println(scale_by_d(1))
 
 # v a point in point in P_dl
 function affine_vector_to_monomial(v::Vector{<:Integer}, l::T1 where {T1<:Integer})
@@ -64,6 +71,36 @@ function degree(g)
     #     return (g.degree()//fdegree
 end
 
-I = Ideal(R,f)
-println(I)
+df = [Rgens[i] * derivative(f,Rgens[i]) for i = 1:n]
+I = Ideal(R,df)
+
+# I would love to involve groebner basis stuff but I think Singular.jl is scuffed
+
+# I would love not to compute the syzigies of I but I think there's a bug
+# import Singular.lift_std
+# groebner_I, T = lift_std(I)
+
+# should have like matrix(groebner_I) = matrix(I) * I_T
+# groebner_I, I_T, syz = lift_std_syz(I,complete_reduction=true)
+# println(groebner_I)
+# J = QuotientRing(R,groebner_I)
+
+# println(J)
+
+
+function compute_primitive_cohomology()
+	cohomology_basis = []
+	for scale = 1:n-1
+		# P_int = list(LatticePolytope(scale_by_d(scale)).interior_points())
+        # monomial_int = [I.reduce(affine_vector_to_monomial(_,scale)) for _ in P_int]
+
+		P = polyhedron(vrep(scale_by_d(scale)),lib)
+		println(P)
+        # want to find (P_int + If)/(If)
+	end
+	return cohomology_basis
+end
+
+B = compute_primitive_cohomology()
+
 
