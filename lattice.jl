@@ -38,9 +38,9 @@ fweight = sum(weight.*polynomial_to_vector(f)[1])
 @assert all([fweight==sum(weight.*polynomial_to_vector(f)[i]) for i = 1:size(polynomial_to_vector(f),1)])
 
 
-vertices = [[[Int(j == i) for j = 1:n] for i = 1:n] ; [[0 for i = 1:n]]]
-for i = 1:n
-	for j = 1:n
+vertices = [[[Int(j == i) for j = 1:n-1] for i = 1:n-1] ; [[0 for i = 1:n-1]]]
+for i = 1:n-1
+	for j = 1:n-1
 		vertices[i][j] *= fweight//weight[i]
 	end
 end
@@ -93,14 +93,24 @@ function compute_primitive_cohomology()
 	for scale = 1:n-1
 		# P_int = list(LatticePolytope(scale_by_d(scale)).interior_points())
         # monomial_int = [I.reduce(affine_vector_to_monomial(_,scale)) for _ in P_int]
+		vertex_set = scale_by_d(scale)
+		P = polyhedron(vrep(vertex_set),lib)
 
-		P = polyhedron(vrep(scale_by_d(scale)),lib)
-		println(P)
+		# build a net of integer points and intersect with P?
+
+		# probably should start at 0 but can rule those out as not lying on interior
+		tuples = Base.Iterators.product([1:maximum(maximum(vertex_set))-1 for i in 1:n-1]...) #max(vert)minus 1 is ok??
+		integer_points = points(intersect(P,polyhedron(vrep(vec([[i for i in aa] for aa in tuples])),lib)))
+		integer_points = [all([ininterior(a,blah) for blah in halfspaces(hrep(P))]) ? a : -100 for a in integer_points]
+		deleteat!(integer_points, integer_points .== -100); #this is hacky
+
+		# need to check if each point added is linearly independent of the current basis
+		cohomology_basis = [cohomology_basis ; [affine_vector_to_monomial(Int.(a),scale) for a in integer_points]]
         # want to find (P_int + If)/(If)
 	end
 	return cohomology_basis
 end
 
 B = compute_primitive_cohomology()
-
+println(B)
 
