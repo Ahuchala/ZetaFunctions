@@ -10,19 +10,20 @@ prec = 3
 
 # use documentation from https://oscar-system.github.io/Singular.jl/latest/ideal/
 # S = residue_ring(ZZ, p^prec)
+
 # R, (w, x, y, z) = polynomial_ring(S, ["w", "x", "y", "z"])
+# weight = [1,1,1,1]
+# f = w^4 + x^4 + y^4 + z^4
 
 R, (x, y, z) = polynomial_ring(S, ["x", "y", "z"])
+weight = [1,1,1]
+# f = x^4 + y^4 + z^4
+f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
 
 Rgens = gens(R)
 n = size(Rgens)[1]
 
-weight = [1,1,1]
-# weight = [1,1,1,1]
 
-f = x^4 + y^4 + z^4
-# f = w^4 + x^4 + y^4 + z^4
-# f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
 d = total_degree(f)
 fdegree = d
 
@@ -79,6 +80,12 @@ end
 
 df = [Rgens[i] * derivative(f,Rgens[i]) for i = 1:n]
 I = Ideal(R,df)
+if n == 3
+	J, (x,y,z) = QuotientRing(R,std(I))
+else
+	J, (w,x,y,z) = QuotientRing(R,std(I))
+end
+
 
 # I would love to involve groebner basis stuff but I think Singular.jl is scuffed
 
@@ -96,7 +103,7 @@ I = Ideal(R,df)
 
 function compute_primitive_cohomology()
 	cohomology_basis = spoly{n_Zn}[]
-	for scale = 1:n
+	for scale = 1:n-1
 		# P_int = list(LatticePolytope(scale_by_d(scale)).interior_points())
         # monomial_int = [I.reduce(affine_vector_to_monomial(_,scale)) for _ in P_int]
 		vertex_set = scale_by_d(scale)
@@ -115,18 +122,18 @@ function compute_primitive_cohomology()
 
 		# integer_points = [point for point in points(intersect(P,polyhedron(vrep(vec([[i for i in aa] for aa in tuples])),lib)))]
 		# integer_points = filter(a -> all([ininterior(a,blah) for blah in halfspaces(hrep(P))]), integer_points)
-		println(integer_points)
+		# println(integer_points)
 		# integer_points = [all([ininterior(a,blah) for blah in halfspaces(hrep(P))]) ? a : -100 for a in integer_points]
 		# deleteat!(integer_points, integer_points .== -100); #this is hacky
 
 		# need to check if each point added is linearly independent of the current basis
-		primitive_ideal = Ideal(R)
+		primitive_ideal = Ideal(J)
 		cohomology_basis_pure = spoly{n_Zn}[]
 		for a in integer_points
 			b = affine_vector_to_monomial(Int.(a),scale)
-			if !contains(primitive_ideal, Ideal(R,b))
+			if !contains(primitive_ideal, Ideal(J,b))
 				push!(cohomology_basis_pure,b)
-				primitive_ideal = Ideal(R,cohomology_basis_pure)
+				primitive_ideal = Ideal(J,cohomology_basis_pure)
 		# cohomology_basis = [cohomology_basis ; [affine_vector_to_monomial(Int.(a),scale) for a in integer_points]]
         # want to find (P_int + If)/(If)
 			end
