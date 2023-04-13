@@ -9,14 +9,20 @@ p = 7
 prec = 3
 
 # use documentation from https://oscar-system.github.io/Singular.jl/latest/ideal/
-S = residue_ring(ZZ, p^prec)
+# S = residue_ring(ZZ, p^prec)
+# R, (w, x, y, z) = polynomial_ring(S, ["w", "x", "y", "z"])
+
 R, (x, y, z) = polynomial_ring(S, ["x", "y", "z"])
 
 Rgens = gens(R)
 n = size(Rgens)[1]
 
 weight = [1,1,1]
-f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
+# weight = [1,1,1,1]
+
+f = x^4 + y^4 + z^4
+# f = w^4 + x^4 + y^4 + z^4
+# f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
 d = total_degree(f)
 fdegree = d
 
@@ -89,8 +95,8 @@ I = Ideal(R,df)
 
 
 function compute_primitive_cohomology()
-	cohomology_basis = []
-	for scale = 1:n-1
+	cohomology_basis = spoly{n_Zn}[]
+	for scale = 1:n
 		# P_int = list(LatticePolytope(scale_by_d(scale)).interior_points())
         # monomial_int = [I.reduce(affine_vector_to_monomial(_,scale)) for _ in P_int]
 		vertex_set = scale_by_d(scale)
@@ -99,18 +105,39 @@ function compute_primitive_cohomology()
 		# build a net of integer points and intersect with P?
 
 		# probably should start at 0 but can rule those out as not lying on interior
-		tuples = Base.Iterators.product([1:maximum(maximum(vertex_set))-1 for i in 1:n-1]...) #max(vert)minus 1 is ok??
-		integer_points = points(intersect(P,polyhedron(vrep(vec([[i for i in aa] for aa in tuples])),lib)))
-		integer_points = [all([ininterior(a,blah) for blah in halfspaces(hrep(P))]) ? a : -100 for a in integer_points]
-		deleteat!(integer_points, integer_points .== -100); #this is hacky
+		tuples = Base.Iterators.product([1:(maximum(maximum(vertex_set))-1) for i in 1:n-1]...) #max(vert)minus 1 is ok??
+		net = polyhedron(vrep(vec([[i for i in aa] for aa in tuples])),lib)
+		Net = [a for a in points(net)]
+
+		# only keep the points in the interior
+		Net = filter(a -> all([ininterior(a,h) for h in halfspaces(hrep(P))]), Net)
+		integer_points = Net
+
+		# integer_points = [point for point in points(intersect(P,polyhedron(vrep(vec([[i for i in aa] for aa in tuples])),lib)))]
+		# integer_points = filter(a -> all([ininterior(a,blah) for blah in halfspaces(hrep(P))]), integer_points)
+		println(integer_points)
+		# integer_points = [all([ininterior(a,blah) for blah in halfspaces(hrep(P))]) ? a : -100 for a in integer_points]
+		# deleteat!(integer_points, integer_points .== -100); #this is hacky
 
 		# need to check if each point added is linearly independent of the current basis
-		cohomology_basis = [cohomology_basis ; [affine_vector_to_monomial(Int.(a),scale) for a in integer_points]]
+		primitive_ideal = Ideal(R)
+		cohomology_basis_pure = spoly{n_Zn}[]
+		for a in integer_points
+			b = affine_vector_to_monomial(Int.(a),scale)
+			if !contains(primitive_ideal, Ideal(R,b))
+				push!(cohomology_basis_pure,b)
+				primitive_ideal = Ideal(R,cohomology_basis_pure)
+		# cohomology_basis = [cohomology_basis ; [affine_vector_to_monomial(Int.(a),scale) for a in integer_points]]
         # want to find (P_int + If)/(If)
+			end
+		end
+		cohomology_basis = [cohomology_basis; cohomology_basis_pure]
 	end
 	return cohomology_basis
 end
 
 B = compute_primitive_cohomology()
 println(B)
+println("actual/expected cohomology basis size: ",size(B,1)," ", (-1)^(n)*Integer(((1-d)^(n)-1)/d+1))
+
 
