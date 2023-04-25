@@ -5,25 +5,25 @@ p = 7
 # p = 61
 # p = 389
 
-# R.<x,y,z> = QQ[]
+R.<x,y,z> = QQ[]
 
 # weight = [1,1,1,1]
-weight = [1,1,3,1]
+# weight = [1,1,3,1]
 # weight = [1,3,1]
-# weight = [1,1,1]
+weight = [1,1,1]
 
-R.<w,x,y,z> = QQ[]
+# R.<w,x,y,z> = QQ[]
 # f = w^4 + x^4 + y^4 + z^4
 # f = w^4+2*w*x^3-2*x^4-x^3*y-x^2*y^2-y^4+w^3*z-x^3*z-2*w^2*y*z+2*w*x*y*z-x^2*y*z-w*y^2*z+2*x*y^2*z-2*y^3*z-w^2*z^2-2*w*x*z^2+x^2*z^2-2*w*y*z^2+x*y*z^2+y^2*z^2+2*w*z^3+2*x*z^3-2*y*z^3-2*z^4
 # f = y^2 - x^6 - z^6 - x^3*z^3
-f = y^2 - x*w*z*(x+w+z)*(x+2*w+z)*(3*x+2*w-z)
+# f = y^2 - x*w*z*(x+w+z)*(x+2*w+z)*(3*x+2*w-z)
 # f =x^6 - z^2 + y^6 + w^6
 # f = w^6 - x^6 - y^6 - z^2
 # f = x^6 - y^2 + z^6
 n = len(R.gens())
 # f = x^3 + y^3 + z^3
 
-# f = x^5 + y^5 + z^5
+f = x^5 + y^5 + z^5
 # f = x^4 + y^4 + z^4
 
 # f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
@@ -263,6 +263,7 @@ for scale in range(n):
         return_set.append( a / gcd(a.monomial_coefficient(mono) for mono in a.monomials()))
 
 psi_basis = (list(return_set))
+print(psi_basis)
 print(len(psi_basis))
 
 sv_dict = {}
