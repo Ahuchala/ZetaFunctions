@@ -220,7 +220,8 @@ end
 
 B = compute_primitive_cohomology()
 println(B)
-@assert size(B,1) == (-1)^(n)*Integer(((1-d)^(n)-1)/d+1)
+len_B = size(B,1)
+@assert len_B == (-1)^(n)*Integer(((1-d)^(n)-1)/d+1)
 
 function sigma(g) 
 	mons = collect(monomials(g)) # I really really hope these are always in the same order
@@ -469,7 +470,6 @@ function compute_s_dict_v(v)
 			h = row_vec_monomials[j]
 			h_R = change_ring(h,R)
 			u_coefficient = prod(Sgens[n+1:end].^(collect(exponent_vectors(h))[1][n+1:end]))
-			println(h_R)
 			mon_index = findall(xx->xx==h_R,psi_basis)
 
 			# can this be empty if X is smooth?
@@ -488,7 +488,7 @@ end
 
 function reduce_uv(monomial, coeff)
 	u = monomial_to_vector(monomial)
-	g = [R(0) for a = 1:len_psi_basis]
+	g = transpose([R(0) for a = 1:len_psi_basis])
 # 	 A = [0 1 ; 2 0]
 # 2×2 Matrix{Int64}:
 #  0  1
@@ -503,50 +503,46 @@ function reduce_uv(monomial, coeff)
 		while all(u.>=v_vec)
 			for ii = 1:n
 				u[ii] -= v_vec[ii]
-				end
-				if n == 3
-
-				end
+			end
+			m = 1
+			if n == 3
+				m = [[R(a(0,0,0,u[1],u[2],u[3])) for a in aa] for aa in mat]
+			elseif n == 4
+				m = [[R(a(0,0,0,0,u[1],u[2],u[3],u[4])) for a in aa] for aa in mat]
+				# a(0,0,0,1,1,1)
+			end
+			# todo: learn how to write matrices properly
+			m = reduce(hcat, m)
+			g = g*m# not transpose()
 		end
-
-		# while all([u[i]>=v_vec[i] for i in range(n)]):
-
-#             for ii in range(n):
-#                 u[ii] -= v_vec[ii]
-#             if n == 3:
-
-#                 m = mat.subs(u1=u[0],u2=u[1],u3=u[2])
-#             elif n == 4:
-#                 m = mat.subs(u1=u[0],u2=u[1],u3=u[2],u4=u[3])
-#             g = g*m# not transpose()
-		
 	end
+	h = sum([g[ii] * psi_basis[ii] for ii = 1:len_psi_basis])
+    return h
 end
 
+frob_matrix = [[R(0) for i =1:len_B] for j =1:len_B]
 
 
-# def reduce_uv(monomial,coeff):
-#     u = monomial_to_vector(monomial)
-#     g = [R(0)] * len_psi_basis
-#     g[0] = coeff
-#     g = matrix(g)
-
-#     for v in P1:
-#         v_vec = monomial_to_vector(v)
-#         if not v in s_dict.keys():
-#             compute_s_dict_v(v)
-#         mat = (s_dict[v])
-
-#         while all([u[i]>=v_vec[i] for i in range(n)]):
-
-#             for ii in range(n):
-#                 u[ii] -= v_vec[ii]
-#             if n == 3:
-
-#                 m = mat.subs(u1=u[0],u2=u[1],u3=u[2])
-#             elif n == 4:
-#                 m = mat.subs(u1=u[0],u2=u[1],u3=u[2],u4=u[3])
-#             g = g*m# not transpose()
-
-#     h = (sum([g[0][ii] * psi_basis[ii] for ii in range(len_psi_basis)]))
-#     return h
+for i = 1:len_B
+    ans = R(0)
+    fro = frobenius_on_cohom(i)
+    println(B[i])
+    mons = collect(monomials(fro))
+    coeffs = R.(collect(coefficients(fro)))
+    for k = 1 : size(coeffs,1)
+    	println(fro)
+    	# todo: sort out this division nonsense
+        h = reduce_uv(mons[k],coeffs[k]) ÷ R(factorial(big(degree(mons[k])-1)))
+        for b in B
+            ans += b * (h.monomial_coefficient(b)%p^prec )
+        end
+        for j =1:len_B
+            frob_matrix[i][j] = ans.monomial_coefficient(R(B[j])) % p^prec
+        end
+    end
+end
+        
+# frob_matrix = matrix(frob_matrix)
+println(frob_matrix)
+# print(frob_matrix.characteristic_polynomial())
+# print(frob_matrix.characteristic_polynomial() % p^prec)
