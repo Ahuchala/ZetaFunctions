@@ -481,9 +481,9 @@ function compute_s_dict_v(v)
 	s_dict[v] = mat
 end
 
-for v in P1
-	compute_s_dict_v(v)
-end
+# for v in P1
+# 	compute_s_dict_v(v)
+# end
 
 
 function reduce_uv(monomial, coeff)
@@ -506,7 +506,7 @@ function reduce_uv(monomial, coeff)
 			end
 			m = 1
 			if n == 3
-				m = [[R(a(0,0,0,u[1],u[2],u[3])) for a in aa] for aa in mat]
+				m = [[evaluate(a,[0,0,0,u[1],u[2],u[3]]) for a in aa] for aa in mat]
 			elseif n == 4
 				m = [[R(a(0,0,0,0,u[1],u[2],u[3],u[4])) for a in aa] for aa in mat]
 				# a(0,0,0,1,1,1)
@@ -514,6 +514,7 @@ function reduce_uv(monomial, coeff)
 			# todo: learn how to write matrices properly
 			m = reduce(hcat, m)
 			g = g*m# not transpose()
+			m = nothing
 		end
 	end
 	h = sum([g[ii] * psi_basis[ii] for ii = 1:len_psi_basis])
@@ -522,10 +523,10 @@ end
 
 frob_matrix = [[zp(0) for i =1:len_B] for j =1:len_B]
 
+# println(len_B)
 
-
+# for i = 1:0
 for i = 1:len_B
-    ans = R(0)
     fro = frobenius_on_cohom(i)
     println(B[i])
     mons = collect(monomials(fro))
