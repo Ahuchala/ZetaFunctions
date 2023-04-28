@@ -21,8 +21,8 @@ zp = residue_ring(ZZ, p^prec)
 R, (x, y, z) = polynomial_ring(zp, ["x", "y", "z"])
 weight = [1,1,1]
 # f = x^5 + y^5 + z^5
-# f = x^4 + y^4 + z^4
-f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
+f = x^4 + y^4 + z^4
+# f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
 
 Rgens = gens(R)
 n = size(Rgens)[1]
@@ -535,24 +535,36 @@ for i = 1:len_B
     	# println(fro)
     	# todo: sort out this division nonsense
     	# could and should also cache this factorial thing
-        h = divexact(reduce_uv(mons[k],coeffs[k]), R(factorial(big(degree(mons[k])-1))))
 
-        # for b in B
-            # ans += b * (h.monomial_coefficient(b)%p^prec )
-        # end
-        ans_mons = collect(monomials(h))
-    	ans_coeffs = collect(coefficients(h))
-    	for j = 1:size(ans_coeffs,1)
-    		# println(ans_mons[j])
-    		mon_index = findall(xx->xx==ans_mons[j],B)
-    		if !isempty(mon_index) #!?
-    			println(ans_coeffs)
-    			frob_matrix[i][mon_index[1]] = ans_coeffs[j]
-    		end
-        # for j =1:len_B
-            # frob_matrix[i][j] = ans.monomial_coefficient(R(B[j])) % p^prec
-        # end
-    	end
+    	h = reduce_uv(mons[k],coeffs[k])
+    	println(h)
+    	# R(factorial(big(degree(mons[k])-1)))
+    	if h != 0
+	    	# println(h)
+	        # h = divexact(reduce_uv(mons[k],coeffs[k]), R(factorial(big(degree(mons[k])-1))))
+	    	# h = change_ring(x,R)
+	        
+	        # for b in B
+	            # ans += b * (h.monomial_coefficient(b)%p^prec )
+	        # end
+	        ans_mons = collect(monomials(h))
+	    	ans_coeffs = collect(coefficients(h))
+	    	denom = zp(factorial(big(degree(mons[k])-1)))
+	    	println(ans_coeffs, denom)
+	    	ans_coeffs = [numerator(a // denom) for a in ans_coeffs]
+	    	
+	    	for j = 1:size(ans_coeffs,1)
+	    		# println(ans_mons[j])
+	    		mon_index = findall(xx->xx==ans_mons[j],B)
+	    		if !isempty(mon_index) #!?
+	    			# println(ans_coeffs)
+	    			frob_matrix[i][mon_index[1]] = ans_coeffs[j]
+	    		end
+	        # for j =1:len_B
+	            # frob_matrix[i][j] = ans.monomial_coefficient(R(B[j])) % p^prec
+	        # end
+	    	end
+	    end
     end
 end
         
