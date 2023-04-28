@@ -4,7 +4,7 @@ using Base.Iterators
 import GLPK
 lib = DefaultLibrary{Int64}(GLPK.Optimizer)
 
-p = 7
+p = 11
 prec = 3
 
 # use documentation from https://oscar-system.github.io/Singular.jl/latest/ideal/
@@ -12,16 +12,17 @@ zp = residue_ring(ZZ, p^prec)
 
 # R, (w, x, y, z) = polynomial_ring(zp, ["w", "x", "y", "z"])
 # weight = [1,1,1,1]
-# # f = w^4+2*w*x^3-2*x^4-x^3*y-x^2*y^2-y^4+w^3*z-x^3*z-2*w^2*y*z+2*w*x*y*z-x^2*y*z-w*y^2*z+2*x*y^2*z-2*y^3*z-w^2*z^2-2*w*x*z^2+x^2*z^2-2*w*y*z^2+x*y*z^2+y^2*z^2+2*w*z^3+2*x*z^3-2*y*z^3-2*z^4
-# f = w^4 + x^4 + y^4 + z^4
+# f = w^4+2*w*x^3-2*x^4-x^3*y-x^2*y^2-y^4+w^3*z-x^3*z-2*w^2*y*z+2*w*x*y*z-x^2*y*z-w*y^2*z+2*x*y^2*z-2*y^3*z-w^2*z^2-2*w*x*z^2+x^2*z^2-2*w*y*z^2+x*y*z^2+y^2*z^2+2*w*z^3+2*x*z^3-2*y*z^3-2*z^4
+# # f = w^4 + x^4 + y^4 + z^4
 
 
+# TODO: check smoothness, nondegeneracy
 
 R, (x, y, z) = polynomial_ring(zp, ["x", "y", "z"])
 weight = [1,1,1]
 # f = x^5 + y^5 + z^5
-f = x^4 + y^4 + z^4
-# f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
+# f = x^4 + y^4 + z^4
+f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
 
 Rgens = gens(R)
 n = size(Rgens)[1]
@@ -102,6 +103,10 @@ end
 # out: monomial in J = R/I
 function R_to_J(g)
 	return change_ring(g,J)
+end
+
+function R_to_S(g)
+	return change_ring(g,S)
 end
 
 function J_to_R(g)
@@ -247,7 +252,7 @@ P1 = nothing
 qr_dict = Dict()
 
 # don't think I need scale = 0??
-for scale = 1:n
+for scale = 1:n#+1
 	vertex_set = scale_by_d(scale)
 	P = polyhedron(vrep(vertex_set),lib)
 	tuples = Base.Iterators.product([0:(maximum(maximum(vertex_set))) for i in 1:n-1]...)
@@ -317,6 +322,7 @@ for scale = 1:n
 	# println(qr_dict)
 end
 
+
 R_dict = Dict()
 
 
@@ -370,7 +376,7 @@ end
 
 function compute_psi_basis()
 	psi_basis = spoly{n_Zn}[R(1)]
-	for scale = 1:n
+	for scale = 1:n-1
 
 		vertex_set = scale_by_d(scale)
 		P = polyhedron(vrep(vertex_set),lib)
@@ -386,29 +392,35 @@ function compute_psi_basis()
 		Net = filter(a -> all([in(a,h) for h in halfspaces(hrep(P))]), Net)
 		integer_points = Net
 
-		# need to check if each point added is linearly independent of the current basis
 		primitive_ideal = Ideal(J)
+		primitive_ideal_std = std(primitive_ideal)
+
+
 		psi_basis_pure = spoly{n_Zn}[]
 		for a in integer_points
-			b = affine_vector_to_monomial(Int.(a),scale)
-			if !contains(primitive_ideal, Ideal(J,b))
-				push!(psi_basis_pure,b)
-				# want to find (P_int + If)/(If)
-				primitive_ideal = Ideal(J,psi_basis_pure)
+			b = affine_vector_to_J_monomial(Int.(a),scale)
+			b_R = change_ring(b,R)
+			for monomial in map(R_to_J, monomials(qr_dict[b_R][2]))
+				if !(monomial in psi_basis_pure)
+					if reduce(monomial,primitive_ideal_std) != 0
+						push!(psi_basis_pure,monomial)
+						primitive_ideal = Ideal(J,psi_basis_pure)
+						primitive_ideal_std = std(primitive_ideal)
+					end
+				end
 			end
 		end
 		psi_basis = [psi_basis; psi_basis_pure]
 	end
-	return psi_basis
+	return [change_ring(psi,R) for psi in psi_basis]
 end
+
 
 psi_basis = compute_psi_basis()
 println(size(psi_basis,1))
 
-sv_dict = Dict()
-# merge!(qr_dict, Dict(monomial => [q,r]))
 
-# print(len(psi_basis))
+sv_dict = Dict()
 
 
 function R_to_S(g)
@@ -432,9 +444,109 @@ end
 # I_S_std = std(I_S)
 
 
-for mon in psi_basis
-    for v in P1
-    	println(mon,v)
-        sv_dict[(mon,v)] = reduce_monomial(U, v*mon)
-    end
+# for mon in psi_basis
+#     for v in P1
+#     	println(mon,v)
+#         sv_dict[(mon,v)] = reduce_monomial(U, v*mon)
+#     end
+# end
+
+
+# assemble info from sv_dict into a dict of matrices
+
+s_dict = Dict()
+len_psi_basis = size(psi_basis,1)
+
+function compute_s_dict_v(v)
+	mat = [[S(0) for a = 1:len_psi_basis] for aa = 1:len_psi_basis]
+	for i = 1:len_psi_basis
+		sv_dict[psi_basis[i],v] = reduce_monomial(U, v*psi_basis[i])
+		row_vec = sv_dict[psi_basis[i],v]
+		println(row_vec)
+		row_vec_monomials = collect(monomials(row_vec))
+		row_vec_coeffs = collect(coefficients(row_vec))
+		for j = 1:size(row_vec_coeffs,1)
+			h = row_vec_monomials[j]
+			h_R = change_ring(h,R)
+			u_coefficient = prod(Sgens[n+1:end].^(collect(exponent_vectors(h))[1][n+1:end]))
+			println(h_R)
+			mon_index = findall(xx->xx==h_R,psi_basis)
+
+			# can this be empty if X is smooth?
+			# if !isempty(mon_index)
+				mat[i][mon_index[1]] = mat[i][mon_index[1]] + u_coefficient * row_vec_coeffs[j]
+			# end
+		end
+	end
+	s_dict[v] = mat
 end
+
+for v in P1
+	compute_s_dict_v(v)
+end
+
+
+function reduce_uv(monomial, coeff)
+	u = monomial_to_vector(monomial)
+	g = [R(0) for a = 1:len_psi_basis]
+# 	 A = [0 1 ; 2 0]
+# 2×2 Matrix{Int64}:
+#  0  1
+#  2  0
+	g[1] = coeff
+	for v in P1
+		v_vec = monomial_to_vector(v)
+		if !(v in keys(s_dict))
+			compute_s_dict_v(v)
+		end
+		mat = s_dict[v]
+		while all(u.>=v_vec)
+			for ii = 1:n
+				u[ii] -= v_vec[ii]
+				end
+				if n == 3
+
+				end
+		end
+
+		# while all([u[i]>=v_vec[i] for i in range(n)]):
+
+#             for ii in range(n):
+#                 u[ii] -= v_vec[ii]
+#             if n == 3:
+
+#                 m = mat.subs(u1=u[0],u2=u[1],u3=u[2])
+#             elif n == 4:
+#                 m = mat.subs(u1=u[0],u2=u[1],u3=u[2],u4=u[3])
+#             g = g*m# not transpose()
+		
+	end
+end
+
+
+
+# def reduce_uv(monomial,coeff):
+#     u = monomial_to_vector(monomial)
+#     g = [R(0)] * len_psi_basis
+#     g[0] = coeff
+#     g = matrix(g)
+
+#     for v in P1:
+#         v_vec = monomial_to_vector(v)
+#         if not v in s_dict.keys():
+#             compute_s_dict_v(v)
+#         mat = (s_dict[v])
+
+#         while all([u[i]>=v_vec[i] for i in range(n)]):
+
+#             for ii in range(n):
+#                 u[ii] -= v_vec[ii]
+#             if n == 3:
+
+#                 m = mat.subs(u1=u[0],u2=u[1],u3=u[2])
+#             elif n == 4:
+#                 m = mat.subs(u1=u[0],u2=u[1],u3=u[2],u4=u[3])
+#             g = g*m# not transpose()
+
+#     h = (sum([g[0][ii] * psi_basis[ii] for ii in range(len_psi_basis)]))
+#     return h

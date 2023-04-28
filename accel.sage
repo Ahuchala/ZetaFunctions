@@ -23,10 +23,10 @@ weight = [1,1,1]
 n = len(R.gens())
 # f = x^3 + y^3 + z^3
 
-f = x^5 + y^5 + z^5
+# f = x^5 + y^5 + z^5
 # f = x^4 + y^4 + z^4
 
-# f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
+f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
 # f = x^3  + y^3 + z^3-x*y*z
 d = f.degree()
 fdegree = d
@@ -273,6 +273,7 @@ U = [u1,u2,u3]
 if n == 4:
     S.<u1,u2,u3,u4> = R[]
     U = [u1,u2,u3,u4]
+
 
 for mon in psi_basis:
     for v in P1:
