@@ -463,7 +463,7 @@ function compute_s_dict_v(v)
 	for i = 1:len_psi_basis
 		sv_dict[psi_basis[i],v] = reduce_monomial(U, v*psi_basis[i])
 		row_vec = sv_dict[psi_basis[i],v]
-		println(row_vec)
+		# println(row_vec)
 		row_vec_monomials = collect(monomials(row_vec))
 		row_vec_coeffs = collect(coefficients(row_vec))
 		for j = 1:size(row_vec_coeffs,1)
@@ -520,7 +520,8 @@ function reduce_uv(monomial, coeff)
     return h
 end
 
-frob_matrix = [[R(0) for i =1:len_B] for j =1:len_B]
+frob_matrix = [[zp(0) for i =1:len_B] for j =1:len_B]
+
 
 
 for i = 1:len_B
@@ -530,15 +531,27 @@ for i = 1:len_B
     mons = collect(monomials(fro))
     coeffs = R.(collect(coefficients(fro)))
     for k = 1 : size(coeffs,1)
-    	println(fro)
+    	# println(fro)
     	# todo: sort out this division nonsense
-        h = reduce_uv(mons[k],coeffs[k]) ÷ R(factorial(big(degree(mons[k])-1)))
-        for b in B
-            ans += b * (h.monomial_coefficient(b)%p^prec )
-        end
-        for j =1:len_B
-            frob_matrix[i][j] = ans.monomial_coefficient(R(B[j])) % p^prec
-        end
+    	# could and should also cache this factorial thing
+        h = divexact(reduce_uv(mons[k],coeffs[k]), R(factorial(big(degree(mons[k])-1))))
+
+        # for b in B
+            # ans += b * (h.monomial_coefficient(b)%p^prec )
+        # end
+        ans_mons = collect(monomials(h))
+    	ans_coeffs = collect(coefficients(h))
+    	for j = 1:size(ans_coeffs,1)
+    		# println(ans_mons[j])
+    		mon_index = findall(xx->xx==ans_mons[j],B)
+    		if !isempty(mon_index) #!?
+    			println(ans_coeffs)
+    			frob_matrix[i][mon_index[1]] = ans_coeffs[j]
+    		end
+        # for j =1:len_B
+            # frob_matrix[i][j] = ans.monomial_coefficient(R(B[j])) % p^prec
+        # end
+    	end
     end
 end
         
