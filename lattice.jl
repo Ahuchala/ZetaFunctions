@@ -6,7 +6,7 @@ lib = DefaultLibrary{Int64}(GLPK.Optimizer)
 
 p = 29
 frob_prec = 2
-prec = 3
+prec = 4
 
 # use documentation from https://oscar-system.github.io/Singular.jl/latest/ideal/
 zp = residue_ring(ZZ, p^prec)
@@ -561,7 +561,7 @@ for i = 1:len_B
 	    		if isempty(mon_index) #!?
 	    			println("error")
 	    		end
-	    		frob_matrix[i][mon_index[1]] = ans_coeffs[j]
+	    		frob_matrix[i][mon_index[1]] = frob_matrix[i][mon_index[1]]+ans_coeffs[j]
 	    	end
 	    end
     end
