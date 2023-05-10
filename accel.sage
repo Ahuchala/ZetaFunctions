@@ -1,7 +1,7 @@
 from sympy.utilities.iterables import multiset_permutations
 from sage.geometry.polyhedron.ppl_lattice_polytope import LatticePolytope_PPL
 
-p = 7
+p = 29
 # p = 61
 # p = 389
 
@@ -21,12 +21,12 @@ weight = [1,1,1]
 # f = w^6 - x^6 - y^6 - z^2
 # f = x^6 - y^2 + z^6
 n = len(R.gens())
-# f = x^3 + y^3 + z^3
+f = x^3 + y^3 + z^3
 
 # f = x^5 + y^5 + z^5
 # f = x^4 + y^4 + z^4
 
-f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
+# f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
 # f = x^3  + y^3 + z^3-x*y*z
 d = f.degree()
 fdegree = d
@@ -241,6 +241,7 @@ def reduce_monomial(u,h):
 # var('a b c d')
 return_set = []
 P1 = [affine_vector_to_monomial(_,1) for _ in LatticePolytope(scale_by_d(1)).points()]
+P1 = sorted(P1)
 for scale in range(n):
     P_int = list(LatticePolytope(scale_by_d(scale)).points())
     monomial_int = []
@@ -323,8 +324,9 @@ def reduce_uv(monomial,coeff):
             for ii in range(n):
                 u[ii] -= v_vec[ii]
             if n == 3:
-
+                # print(u)
                 m = mat.subs(u1=u[0],u2=u[1],u3=u[2])
+                # print(m)
             elif n == 4:
                 m = mat.subs(u1=u[0],u2=u[1],u3=u[2],u4=u[3])
             g = g*m# not transpose()
@@ -341,6 +343,7 @@ for i in range(len(B)):
     print(B[i])
     for monomial in fro.monomials():
         h = reduce_uv(monomial,fro.monomial_coefficient(monomial)) / factorial(degree(monomial)-1)
+        print(h)
         for b in B:
             ans += b * (h.monomial_coefficient(b)%p^prec )
         for j in range(len(B)):

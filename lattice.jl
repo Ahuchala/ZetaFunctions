@@ -4,7 +4,8 @@ using Base.Iterators
 import GLPK
 lib = DefaultLibrary{Int64}(GLPK.Optimizer)
 
-p = 11
+p = 29
+frob_prec = 2
 prec = 3
 
 # use documentation from https://oscar-system.github.io/Singular.jl/latest/ideal/
@@ -21,7 +22,8 @@ zp = residue_ring(ZZ, p^prec)
 R, (x, y, z) = polynomial_ring(zp, ["x", "y", "z"])
 weight = [1,1,1]
 # f = x^5 + y^5 + z^5
-f = x^4 + y^4 + z^4
+# f = x^4 + y^4 + z^4
+f = x^3 + y^3 + z^3
 # f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
 
 Rgens = gens(R)
@@ -235,8 +237,8 @@ function frobenius(g)
 	summer = 0
 	sigma_g = sigma(g)
 	fj = R(1)
-	for j = 0:prec-1
-		summer +=  binomial(-d,j) * binomial(d+prec-1,d+j) * sigma_g*sigma(fj)
+	for j = 0:frob_prec-1
+		summer +=  binomial(-d,j) * binomial(d+frob_prec-1,d+j) * sigma_g*sigma(fj)
 		fj *= f
 	end
 	return summer
@@ -323,7 +325,7 @@ for scale = 1:n#+1
 	# println(qr_dict)
 end
 
-
+P1 = sort(P1)
 R_dict = Dict()
 
 
@@ -458,6 +460,8 @@ end
 s_dict = Dict()
 len_psi_basis = size(psi_basis,1)
 
+
+# I think this calculation works
 function compute_s_dict_v(v)
 	mat = [[S(0) for a = 1:len_psi_basis] for aa = 1:len_psi_basis]
 	for i = 1:len_psi_basis
@@ -495,26 +499,33 @@ function reduce_uv(monomial, coeff)
 #  2  0
 	g[1] = coeff
 	for v in P1
+
 		v_vec = monomial_to_vector(v)
-		if !(v in keys(s_dict))
-			compute_s_dict_v(v)
-		end
-		mat = s_dict[v]
-		while all(u.>=v_vec)
-			for ii = 1:n
-				u[ii] -= v_vec[ii]
+		if all(u.>=v_vec)
+			if !(v in keys(s_dict))
+				compute_s_dict_v(v)
 			end
-			m = 1
-			if n == 3
-				m = [[evaluate(a,[0,0,0,u[1],u[2],u[3]]) for a in aa] for aa in mat]
-			elseif n == 4
-				m = [[R(a(0,0,0,0,u[1],u[2],u[3],u[4])) for a in aa] for aa in mat]
-				# a(0,0,0,1,1,1)
+			mat = s_dict[v]
+			while all(u.>=v_vec)
+
+				for ii = 1:n
+					u[ii] -= v_vec[ii]
+				end
+				m = 1
+				if n == 3
+
+					m = [[evaluate(a,[0,0,0,u[1],u[2],u[3]]) for a in aa] for aa in mat]
+				elseif n == 4
+					println("warning: not implemented")
+					m = [[R(a(0,0,0,0,u[1],u[2],u[3],u[4])) for a in aa] for aa in mat]
+					# a(0,0,0,1,1,1)
+				end
+				# todo: learn how to write matrices properly
+				m = transpose(reduce(hcat, m))
+				# m = reduce(hcat,m)
+				g = g*m 
+				# g = g*m# not transpose() ?
 			end
-			# todo: learn how to write matrices properly
-			m = reduce(hcat, m)
-			g = g*m# not transpose()
-			m = nothing
 		end
 	end
 	h = sum([g[ii] * psi_basis[ii] for ii = 1:len_psi_basis])
@@ -537,32 +548,20 @@ for i = 1:len_B
     	# could and should also cache this factorial thing
 
     	h = reduce_uv(mons[k],coeffs[k])
-    	println(h)
-    	# R(factorial(big(degree(mons[k])-1)))
     	if h != 0
-	    	# println(h)
-	        # h = divexact(reduce_uv(mons[k],coeffs[k]), R(factorial(big(degree(mons[k])-1))))
-	    	# h = change_ring(x,R)
-	        
-	        # for b in B
-	            # ans += b * (h.monomial_coefficient(b)%p^prec )
-	        # end
 	        ans_mons = collect(monomials(h))
 	    	ans_coeffs = collect(coefficients(h))
 	    	denom = zp(factorial(big(degree(mons[k])-1)))
-	    	println(ans_coeffs, denom)
-	    	ans_coeffs = [numerator(a // denom) for a in ans_coeffs]
-	    	
+
+
+	    	ans_coeffs = [numerator(a // denom)*invmod(Int(BigInt(denominator(a // denom))),p^prec) for a in ans_coeffs]
+	    	println(ans_coeffs)
 	    	for j = 1:size(ans_coeffs,1)
-	    		# println(ans_mons[j])
 	    		mon_index = findall(xx->xx==ans_mons[j],B)
-	    		if !isempty(mon_index) #!?
-	    			# println(ans_coeffs)
-	    			frob_matrix[i][mon_index[1]] = ans_coeffs[j]
+	    		if isempty(mon_index) #!?
+	    			println("error")
 	    		end
-	        # for j =1:len_B
-	            # frob_matrix[i][j] = ans.monomial_coefficient(R(B[j])) % p^prec
-	        # end
+	    		frob_matrix[i][mon_index[1]] = ans_coeffs[j]
 	    	end
 	    end
     end
