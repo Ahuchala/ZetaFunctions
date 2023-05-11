@@ -23,8 +23,8 @@ R, (x, y, z) = polynomial_ring(zp, ["x", "y", "z"])
 weight = [1,1,1]
 # f = x^5 + y^5 + z^5
 # f = x^4 + y^4 + z^4
-f = x^3 + y^3 + z^3
-# f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
+# f = x^3 + y^3 + z^3
+f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
 
 Rgens = gens(R)
 n = size(Rgens)[1]
@@ -270,6 +270,7 @@ for scale = 1:n#+1
 	for monomial in monomial_int
 		r = Singular.reduce(monomial, I_std)  # poly, ideal
 		q = monomial - r
+		# this feels bound to cause a bug
 		q = Singular.lift(I,Ideal(R,q))[1][1] #Ideal, subideal
 
 		# TODO: clean this up, should just be vectors of ints
@@ -325,7 +326,6 @@ for scale = 1:n#+1
 	# println(qr_dict)
 end
 
-P1 = sort(P1)
 R_dict = Dict()
 
 
@@ -516,15 +516,14 @@ function reduce_uv(monomial, coeff)
 
 					m = [[evaluate(a,[0,0,0,u[1],u[2],u[3]]) for a in aa] for aa in mat]
 				elseif n == 4
-					println("warning: not implemented")
-					m = [[R(a(0,0,0,0,u[1],u[2],u[3],u[4])) for a in aa] for aa in mat]
-					# a(0,0,0,1,1,1)
+					
+					m = [[evaluate(a,[0,0,0,u[1],u[2],u[3],u[4]]) for a in aa] for aa in mat]
+				else
+					println("error: not implemented for n > 4")
 				end
 				# todo: learn how to write matrices properly
 				m = transpose(reduce(hcat, m))
-				# m = reduce(hcat,m)
-				g = g*m 
-				# g = g*m# not transpose() ?
+				g = g*m
 			end
 		end
 	end
@@ -535,6 +534,52 @@ end
 frob_matrix = [[zp(0) for i =1:len_B] for j =1:len_B]
 
 # println(len_B)
+
+I_f = Ideal(R,[derivative(f,gen) for gen in Rgens])
+I_f_std = std(I_f)
+de_Rham_lifts = Dict()
+
+# this is the slower reduction, built for monomials
+function reduce_to_basis_helper(mon)
+
+	if !haskey(de_Rham_lifts,mon)
+		rem = reduce(mon,I_f_std)
+		quo = mon - rem
+		quo = Singular.lift(I_f,Ideal(R,quo))[1][1]
+		quo =  [[[a[2],a[3]] for a in quo if a[1] == i] for i = 1 : n]
+		quo = [vector_to_polynomial(a) for a in quo]
+		de_Rham_lifts[mon] = [quo,rem]
+	end
+
+	quo, rem = de_Rham_lifts[mon]
+
+	return sum([derivative(quo[i],Rgens[i]) for i = 1 : n]) + rem
+
+end
+
+# reduce one monomial at a time
+reduce_to_basis_cache = Dict()
+function reduce_to_basis_helper_2(mon)
+	if !haskey(reduce_to_basis_cache,mon)
+		# could be sped up, meh
+		a = mon
+		denom = 1
+		for i = 1 : n
+			a_mons = collect(monomials(a))
+			a_coeffs = collect(coefficients(a))
+			a = sum([reduce_to_basis_helper(a_mons[i]) * a_coeffs[i] for i = 1 : size(a_coeffs,1)])
+		end
+		reduce_to_basis_cache[mon] = a
+	end
+	return reduce_to_basis_cache[mon]
+end
+
+# unfortunately need to rework this based on B...
+function reduce_to_basis(g)
+	g_mons = collect(monomials(g))
+	g_coeffs = collect(coefficients(g))
+	return sum([g_coeffs[i] * reduce_to_basis_helper_2(g_mons[i]) for i = 1 : size(g_coeffs,1)])
+end
 
 # for i = 1:0
 for i = 1:len_B
@@ -549,19 +594,31 @@ for i = 1:len_B
 
     	h = reduce_uv(mons[k],coeffs[k])
     	if h != 0
+    		h = reduce_to_basis(h)
 	        ans_mons = collect(monomials(h))
 	    	ans_coeffs = collect(coefficients(h))
 	    	denom = zp(factorial(big(degree(mons[k])-1)))
 
-
 	    	ans_coeffs = [numerator(a // denom)*invmod(Int(BigInt(denominator(a // denom))),p^prec) for a in ans_coeffs]
 	    	println(ans_coeffs)
+
+
+	    	# now add to frob matrix
 	    	for j = 1:size(ans_coeffs,1)
+	    		# mon = reduce_to_basis(ans_mons[j])
+	    	# for j = 1:size(ans_coeffs,1)
 	    		mon_index = findall(xx->xx==ans_mons[j],B)
 	    		if isempty(mon_index) #!?
-	    			println("error")
+	    			println("error: ", ans_mons[j])
 	    		end
-	    		frob_matrix[i][mon_index[1]] = frob_matrix[i][mon_index[1]]+ans_coeffs[j]
+	    		if ans_mons[j] == R(1)
+	    			frob_matrix[i][1] = frob_matrix[i][1]+ans_coeffs[j]
+	    		else
+	    			frob_matrix[i][2] = frob_matrix[i][2]+ans_coeffs[j]
+	    		end
+
+	    		# frob_matrix[i][mon_index[1]] = frob_matrix[i][mon_index[1]]+ans_coeffs[j]
+	    		# end
 	    	end
 	    end
     end
