@@ -79,6 +79,40 @@ function vector_to_polynomial(v)
 	return sum([vector_to_monomial(a[1]) * a[2] for a in v])
 end
 
+function vector_to_monomial_J(v::Vector{<:Integer})
+	@assert !isempty(v) && all(>=(0), v)
+	@assert length(v) == n
+	return prod(Jgens.^v)
+end
+
+function vector_to_polynomial_J(v)
+	if isempty(v)
+		return R(0)
+	end
+	return sum([vector_to_monomial_J(a[1]) * a[2] for a in v])
+end
+
+
+# return dg/dxj
+function my_derivative(g,j)
+	ring_gens = gens(parent(g))
+	mons = collect(monomials(g))
+	coeffs = collect(coefficients(g))
+	ans = parent(g)(0)
+	for i = 1:length(coeffs)
+		u = monomial_to_vector(mons[i])
+		# for j = 1:n
+			if u[j] > 0
+				u[j] -= 1
+				ans += coeffs[i] * (u[j]+1)*prod(ring_gens.^u)
+				u[j] += 1
+			end
+		# end
+	end
+	return ans
+end
+
+
 # returns sum xi dg/dxi, using sum xi d(x^u)/dxi = sum(u) x^u
 function toric_derivative(g)
 	return [sum(collect(exponent_vectors(monomial))[1]) * monomial for monomial in monomials(g)]
@@ -92,7 +126,7 @@ end
 
 # change a polynomial g to coefficients in ring B
 function change_ring(g, ringB)
-	if g == 0
+	if iszero(g)
 		return ringB(0)
 	end
 	coeffs = collect(coefficients(g))
@@ -268,10 +302,10 @@ for scale = 1:n#+1
 		global P1 = monomial_int
 	end
 	for monomial in monomial_int
-		r = Singular.reduce(monomial, I_std)  # poly, ideal
-		q = monomial - r
+		rem = Singular.reduce(monomial, I_std)  # poly, ideal
+		quo = monomial - rem
 		# this feels bound to cause a bug
-		q = Singular.lift(I,Ideal(R,q))[1][1] #Ideal, subideal
+		quo = Singular.lift(I,Ideal(R,quo))[1][1] #Ideal, subideal
 
 		# TODO: clean this up, should just be vectors of ints
 		# r = collect(exponent_vectors(r))
@@ -306,9 +340,9 @@ for scale = 1:n#+1
 
 
 		# q = collect(q)
-		q =  [[[a[2],a[3]] for a in q if a[1] == i] for i = 1 : n]
+		quo =  [[[a[2],a[3]] for a in quo if a[1] == i] for i = 1 : n]
 		# q = collect(flatten(q))
-		q = [vector_to_polynomial(a) for a in q]
+		quo = [vector_to_polynomial(a) for a in quo]
 		# println(q)
 		# return
 		# now q looks like 
@@ -318,7 +352,7 @@ for scale = 1:n#+1
 		#  [[[3, 0, 0], 185], [[2, 1, 0], 173], [[1, 2, 0], 256], [[0, 3, 0], 98], [[2, 0, 1], 196], [[1, 1, 1], 325], [[0, 2, 1], 316], [[1, 0, 2], 171], [[0, 1, 2], 21], [[0, 0, 3], 55]]
 		#  [[[3, 0, 0], 136], [[2, 1, 0], 173], [[1, 2, 0], 32], [[0, 3, 0], 329], [[2, 0, 1], 339], [[1, 1, 1], 33], [[0, 2, 1], 103], [[0, 0, 3], 13]]
 
-		qr_dict[monomial] = [q,r]
+		qr_dict[monomial] = [quo,rem]
 
 		# merge!(qr_dict, Dict(monomial => [q,r]))
 
@@ -517,7 +551,7 @@ function reduce_uv(monomial, coeff)
 					m = [[evaluate(a,[0,0,0,u[1],u[2],u[3]]) for a in aa] for aa in mat]
 				elseif n == 4
 					
-					m = [[evaluate(a,[0,0,0,u[1],u[2],u[3],u[4]]) for a in aa] for aa in mat]
+					m = [[evaluate(a,[0,0,0,0,u[1],u[2],u[3],u[4]]) for a in aa] for aa in mat]
 				else
 					println("error: not implemented for n > 4")
 				end
@@ -535,50 +569,53 @@ frob_matrix = [[zp(0) for i =1:len_B] for j =1:len_B]
 
 # println(len_B)
 
-I_f = Ideal(R,[derivative(f,gen) for gen in Rgens])
-I_f_std = std(I_f)
-de_Rham_lifts = Dict()
 
-# this is the slower reduction, built for monomials
-function reduce_to_basis_helper(mon)
-
-	if !haskey(de_Rham_lifts,mon)
-		rem = reduce(mon,I_f_std)
-		quo = mon - rem
-		quo = Singular.lift(I_f,Ideal(R,quo))[1][1]
-		quo =  [[[a[2],a[3]] for a in quo if a[1] == i] for i = 1 : n]
-		quo = [vector_to_polynomial(a) for a in quo]
-		de_Rham_lifts[mon] = [quo,rem]
-	end
-
-	quo, rem = de_Rham_lifts[mon]
-
-	return sum([derivative(quo[i],Rgens[i]) for i = 1 : n]) + rem
-
+max_degree_B = maximum([degree(a) for a in B])
+graded_I_B = []
+graded_I_B_std = []
+for i = 1 : max_degree_B
+	global graded_I_B = [graded_I_B ; Ideal(J,filter(a -> (degree(a) == i),B))]
+	global graded_I_B_std = [graded_I_B_std; std(Ideal(J,filter(a -> (degree(a) == i),B)))]
 end
 
-# reduce one monomial at a time
-reduce_to_basis_cache = Dict()
-function reduce_to_basis_helper_2(mon)
-	if !haskey(reduce_to_basis_cache,mon)
-		# could be sped up, meh
-		a = mon
-		denom = 1
-		for i = 1 : n
-			a_mons = collect(monomials(a))
-			a_coeffs = collect(coefficients(a))
-			a = sum([reduce_to_basis_helper(a_mons[i]) * a_coeffs[i] for i = 1 : size(a_coeffs,1)])
-		end
-		reduce_to_basis_cache[mon] = a
-	end
-	return reduce_to_basis_cache[mon]
-end
+cache_reduction = Dict()
 
-# unfortunately need to rework this based on B...
+# todo: reduce everything in psi_basis
 function reduce_to_basis(g)
+	g  = change_ring(g,J)
+
 	g_mons = collect(monomials(g))
 	g_coeffs = collect(coefficients(g))
-	return sum([g_coeffs[i] * reduce_to_basis_helper_2(g_mons[i]) for i = 1 : size(g_coeffs,1)])
+	ans = J(0)
+	for i = 1 : size(g_coeffs,1)
+		mon = g_mons[i]
+		if !haskey(cache_reduction,mon)
+			dict_ans = J(0)
+			monomial_to_reduce = mon
+			for i = max_degree_B:-1:1
+				if !iszero(monomial_to_reduce)
+					monomial_to_reduce = change_ring(monomial_to_reduce,J)
+					println(monomial_to_reduce)
+					ideal = graded_I_B[i]
+					ideal_std = graded_I_B_std[i]
+					rem = Singular.reduce(monomial_to_reduce,ideal_std)
+					quo = Singular.lift(ideal,Ideal(J,monomial_to_reduce-rem))[1]
+					s = size(gens(ideal),1)
+					quo =  [[[a[2],a[3]] for a in quo[1] if a[1] == i] for i = 1 : s]
+					# q = collect(flatten(q))
+					quo = [vector_to_polynomial(a) for a in quo]
+					
+					dict_ans += sum([change_ring(quo[i],J)*gens(ideal)[i] for i = 1 : s])
+					monomial_to_reduce = rem
+				end
+
+			end
+			cache_reduction[mon] = dict_ans
+		end
+		ans += g_coeffs[i] * cache_reduction[mon]
+	end
+	return change_ring(ans,R)
+	# return sum([g_coeffs[i] * reduce_to_basis_helper(g_mons[i]) for i = 1 : size(g_coeffs,1)])
 end
 
 # for i = 1:0
@@ -600,7 +637,7 @@ for i = 1:len_B
 	    	denom = zp(factorial(big(degree(mons[k])-1)))
 
 	    	ans_coeffs = [numerator(a // denom)*invmod(Int(BigInt(denominator(a // denom))),p^prec) for a in ans_coeffs]
-	    	println(ans_coeffs)
+	    	# println(ans_coeffs)
 
 
 	    	# now add to frob matrix
@@ -611,13 +648,13 @@ for i = 1:len_B
 	    		if isempty(mon_index) #!?
 	    			println("error: ", ans_mons[j])
 	    		end
-	    		if ans_mons[j] == R(1)
-	    			frob_matrix[i][1] = frob_matrix[i][1]+ans_coeffs[j]
-	    		else
-	    			frob_matrix[i][2] = frob_matrix[i][2]+ans_coeffs[j]
-	    		end
+	    		# if ans_mons[j] == R(1)
+	    		# 	frob_matrix[i][1] = frob_matrix[i][1]+ans_coeffs[j]
+	    		# else
+	    		# 	frob_matrix[i][2] = frob_matrix[i][2]+ans_coeffs[j]
+	    		# end
 
-	    		# frob_matrix[i][mon_index[1]] = frob_matrix[i][mon_index[1]]+ans_coeffs[j]
+	    		frob_matrix[i][mon_index[1]] = frob_matrix[i][mon_index[1]]+ans_coeffs[j]
 	    		# end
 	    	end
 	    end
