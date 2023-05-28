@@ -9,32 +9,32 @@ DEBUG = true
 include("aux_functions.jl")
 
 p = 31
-frob_prec = 2
+frob_prec = 1
 # prec = 3
-n = 4
+n = 3
 
 # prec = n
 # prec = n+1
-prec = 4
+prec = 2
 # use documentation from https://oscar-system.github.io/Singular.jl/latest/ideal/
 zp = residue_ring(ZZ, p^prec)
 
-R, (w, x, y, z) = polynomial_ring(zp, ["w", "x", "y", "z"])
-weight = [1,1,1,1]
+# R, (w, x, y, z) = polynomial_ring(zp, ["w", "x", "y", "z"])
+# weight = [1,1,1,1]
 # f = w^4+2*w*x^3-2*x^4-x^3*y-x^2*y^2-y^4+w^3*z-x^3*z-2*w^2*y*z+2*w*x*y*z-x^2*y*z-w*y^2*z+2*x*y^2*z-2*y^3*z-w^2*z^2-2*w*x*z^2+x^2*z^2-2*w*y*z^2+x*y*z^2+y^2*z^2+2*w*z^3+2*x*z^3-2*y*z^3-2*z^4
-f = w^4 + x^4 + y^4 + z^4
+# f = w^4 + x^4 + y^4 + z^4
 
 
 # TODO: check smoothness, nondegeneracy
 
-# R, (x, y, z) = polynomial_ring(zp, ["x", "y", "z"])
+R, (x, y, z) = polynomial_ring(zp, ["x", "y", "z"])
 # weight = [1,3,1]
 # f = y^2 - x^6 - x^3*z^3
-# weight = [1,1,1]
+weight = [1,1,1]
 # f = x^5 + y^5 + z^5
-# f = x^4 + y^4 + z^4
+# f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
 # f = x^3 + y^3 + z^3
-# f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
+f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
 
 Rgens = gens(R)
 # n = size(Rgens)[1]
@@ -198,13 +198,15 @@ function compute_primitive_cohomology()
 
 		# need to check if each point added is linearly independent of the current basis
 		primitive_ideal = Ideal(J) #TODO: groebner?
+		primitive_ideal_std = std(primitive_ideal)
 		cohomology_basis_pure = spoly{n_Zn}[]
 		for a in integer_points
 			b = affine_vector_to_monomial(Int.(a),scale)
-			if !contains(primitive_ideal, Ideal(J,b))
+			if !contains(primitive_ideal_std, Ideal(J,b))
 				push!(cohomology_basis_pure,b)
 				# want to find (P_int + If)/(If)
 				primitive_ideal = Ideal(J,cohomology_basis_pure)
+				primitive_ideal_std = std(primitive_ideal)
 			end
 		end
 		cohomology_basis = [cohomology_basis; cohomology_basis_pure]
@@ -253,6 +255,7 @@ end
 # qr_dict = Dict{spoly{n_Zn},Vector{Vector{Vector{Any}}}}
 # syntax: merge!(qr_dict, Dict(x => [x,y,z]))
 P1 = nothing
+# TODO: sizehint?
 qr_dict = Dict()
 
 # don't think I need scale = 0??
@@ -272,6 +275,7 @@ for scale = 1:n#+1
 		rem = Singular.reduce(monomial, I_std)  # poly, ideal
 		quo = monomial - rem
 		# this feels bound to cause a bug
+		# TODO: lift groebner??
 		quo = Singular.lift(I,Ideal(R,quo))[1][1] #Ideal, subideal
 		quo =  [[[a[2],a[3]] for a in quo if a[1] == i] for i = 1 : n]
 		quo = [vector_to_polynomial(a) for a in quo]
@@ -319,7 +323,7 @@ function reduce_monomial(u,h)
 	# r and q are backwards in sage :(
 	q,r = qr_dict[h_R]
 
-	ans = u_coefficient * change_ring(r + sum([Rgens[i] * derivative(q[i],Rgens[i]) for i = 1:n]),ring)
+	ans = u_coefficient * change_ring(r + toric_derivative_vector(q),ring)
 
 	mons = collect(monomials(ans))
 	coeffs = collect(coefficients(ans))

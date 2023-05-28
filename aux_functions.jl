@@ -47,11 +47,22 @@ end
 
 
 # returns sum xi dg/dxi, using sum xi d(x^u)/dxi = sum(u) x^u
-function toric_derivative(g)
-	return sum([sum(collect(exponent_vectors(monomial))[1]) * monomial for monomial in monomials(g)])
-end
+# function toric_derivative(g)
+# 	return sum([sum(collect(exponent_vectors(monomial))[1]) * monomial for monomial in monomials(g)])
+# end
 
-# same as toric_derviative, but input is of the form [[[expvector], coeff], [[expvector], coeff],...]
-function toric_derivative_vector(v)
-	return [[a[1], sum(a[1])*a[2]] for a in v]
+# same as toric_derviative, but input is of the form g1,...,gn
+# and returns sum xi dg_i dxi
+function toric_derivative_vector(g)
+	coeff_vec_g = [collect(coefficients(g[i])) for i = 1:n]
+	mon_vec_g = [collect(monomials(g[i])) for i = 1:n]
+	exp_vec_g = [collect(exponent_vectors(g[i])) for i = 1:n]
+	ans = 0
+	for i = 1:n
+		num_coeffs = size(coeff_vec_g[i],1)
+		for j = 1:num_coeffs
+			ans += coeff_vec_g[i][j]*mon_vec_g[i][j]*exp_vec_g[i][j][i]
+		end
+	end
+	return ans
 end
