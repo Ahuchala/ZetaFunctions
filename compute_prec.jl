@@ -2,7 +2,7 @@ function f0(m)
     return sum([Int(floor(log(max(1,m-i))/log(p))) for i = 1 :n])
 end
 
-# be careful you're passing in a bigint
+# be careful you're passing in a bigint :(
 function zp_val(m)
     ans = 0
     while mod(m,p) == 0
@@ -74,7 +74,7 @@ function make_A(m,A0)
         end
         if go_to_step_6
             if f0(j1+l*p)-l-g_prec(j1,l)<=N
-                l = l+1
+                l += 1
                 go_to_step_6 = false
                 go_to_step_5 = true
             else
@@ -88,7 +88,7 @@ function make_A(m,A0)
                 A[i] = f0(i)
             end
             N = max(A[j1+l*p]-l-g_prec(j1,l),N)
-            l = l+1
+            l += 1
             go_to_step_7 = false
             go_to_step_5 = true
         end
@@ -119,11 +119,11 @@ function find_s(r)
         if go_to_step_4
             A = make_A(p*(n+j),A)
             if A[p*(n+j)]>n-1+j-r
-                s = s+1
+                s += 1
                 go_to_step_4 = false
                 go_to_step_2 = true
             else
-                j = j+1
+                j += 1
                 go_to_step_4 = false
                 go_to_step_3 = true
             end

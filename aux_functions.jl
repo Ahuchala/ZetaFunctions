@@ -26,6 +26,15 @@ function poly_R_to_S(g)
 	return change_ring(g,S)
 end
 
+function J_to_S(g)
+	return change_ring(g,S)
+end
+
+function poly_J_to_S(g)
+	return change_ring(g,S)
+end
+
+
 # return dg/dxj
 function my_derivative(g,j)
 	ring_gens = gens(parent(g))

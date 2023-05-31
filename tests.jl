@@ -1,0 +1,5 @@
+# include("lattice.jl")
+R, (x, y, z) = polynomial_ring(ZZ, ["x", "y", "z"])
+@assert(toric_derivative_vector([x,y,z]) == x+y+z)
+@assert(toric_derivative_vector([y,z,x]) == 0)
+@assert(toric_derivative_vector([x*y*z,x*y*z,x*y*z]) == 3*x*y*z)

@@ -6,16 +6,31 @@ lib = DefaultLibrary{Int64}(GLPK.Optimizer)
 
 DEBUG = true
 
-include("aux_functions.jl")
 
-p = 31
-frob_prec = 1
-# prec = 3
-n = 3
+p = 11
+# p = 13
+# n = 4
+# d = 4
+# len_B = (-1)^(n)*Integer(((1-d)^(n)-1)/d+1)
+
+include("aux_functions.jl")
+# include("compute_prec.jl")
+
+# desired_prec = Int(ceil(log(2*fdegree/floor(len_B/2))/log(p) + (n)*floor(len_B/2)/2)) #???
+# desired_prec = min(desired_prec,Int(ceil(log(2*binomial(len_B,(len_B+1)÷2)*p^((n/2)*((len_B+1)÷2)))/log(p))))
+# arithmetic_prec = find_s(desired_prec)
+# desired_prec = 3
+# arithmetic_prec = 2
+
+# frob_prec = arithmetic_prec
+# prec = desired_prec
+
+prec = 12
+frob_prec = 8
 
 # prec = n
 # prec = n+1
-prec = 2
+
 # use documentation from https://oscar-system.github.io/Singular.jl/latest/ideal/
 zp = residue_ring(ZZ, p^prec)
 
@@ -31,13 +46,13 @@ R, (x, y, z) = polynomial_ring(zp, ["x", "y", "z"])
 # weight = [1,3,1]
 # f = y^2 - x^6 - x^3*z^3
 weight = [1,1,1]
-# f = x^5 + y^5 + z^5
-# f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
+# f = x^5 + y^5 + z^5+3*x*y*z^3
+f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
 # f = x^3 + y^3 + z^3
-f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
+# f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
 
 Rgens = gens(R)
-# n = size(Rgens)[1]
+n = size(Rgens)[1]
 
 
 
@@ -51,13 +66,13 @@ Sgens = gens(S)
 
 f_coeff = collect(coefficients(f))
 f_mons = collect(monomials(f))
-f = sum([(Integer(BigInt(f_coeff[i]))%p)*f_mons[i] for i in 1:size(f_coeff,1)])
+# f = sum([(Integer(BigInt(f_coeff[i]))%p)*f_mons[i] for i in 1:size(f_coeff,1)])
 
 d = total_degree(f)
 fdegree = d
 
-k = (-1)^(n)*Integer(((1-d)^(n)-1)/d+1)
-# frob_prec = Int(ceil(log(binomial(k,(k+1)÷2)*p^(n/2)*((k+1)÷2))/log(p)))
+# k = (-1)^(n)*Integer(((1-d)^(n)-1)/d+1)
+# frob_prec = Int(ceil(log(2*binomial(k,(k+1)÷2)*p^((n/2)*((k+1)÷2)))/log(p)))
 println("Using arithmetic with precision p^",prec," and frobenius precision ", frob_prec)
 
 df = [Rgens[i] * derivative(f,Rgens[i]) for i = 1:n]
@@ -163,17 +178,15 @@ end
 
 # this only works for weighted projective space
 function degree(g)
-    if g == R(0)
+    if g == 0
     	return -1
-    elseif g == R(1)
+    elseif g == 1
         return 0
     end
 #     shouldn't matter which one we pick
     mon = collect(monomials(g))[1]
     return sum(weight .* monomial_to_vector(mon)) ÷ fweight
-    #     return (g.degree()//fdegree
 end
-
 
 
 
@@ -189,21 +202,21 @@ function compute_primitive_cohomology()
 
 		# probably should start at 0 but can rule those out as not lying on interior
 		tuples = Base.Iterators.product([1:m_v_s for i in 1:n-1]...) #max(vert)minus 1 is ok??
-		net = polyhedron(vrep(vec([[i for i in aa] for aa in tuples])),lib)
-		Net = [a for a in points(net)]
+		integer_points = polyhedron(vrep(vec([[i for i in aa] for aa in tuples])),lib)
+		integer_points = [a for a in points(integer_points)]
 
 		# only keep the points in the interior
-		Net = filter(a -> all([ininterior(a,h) for h in halfspaces(hrep(P))]), Net)
-		integer_points = Net
+		integer_points = filter(a -> all([ininterior(a,h) for h in halfspaces(hrep(P))]), integer_points)
 
 		# need to check if each point added is linearly independent of the current basis
 		primitive_ideal = Ideal(J) #TODO: groebner?
 		primitive_ideal_std = std(primitive_ideal)
 		cohomology_basis_pure = spoly{n_Zn}[]
 		for a in integer_points
-			b = affine_vector_to_monomial(Int.(a),scale)
-			if !contains(primitive_ideal_std, Ideal(J,b))
-				push!(cohomology_basis_pure,b)
+			b = affine_vector_to_J_monomial(Int.(a),scale)
+			if Singular.reduce(b,primitive_ideal_std) != 0
+			# if !contains(primitive_ideal,Ideal(J,b))
+				push!(cohomology_basis_pure,change_ring(b,R))
 				# want to find (P_int + If)/(If)
 				primitive_ideal = Ideal(J,cohomology_basis_pure)
 				primitive_ideal_std = std(primitive_ideal)
@@ -222,7 +235,7 @@ if DEBUG
 	if weight != [1 for i = 1:n]
 		println("Warning: basis length not checked for weight ", weight)
 	else
-		@assert len_B == (-1)^(n)*Integer(((1-d)^(n)-1)/d+1)
+		@assert size(B,1) == (-1)^(n)*Integer(((1-d)^(n)-1)/d+1)
 	end
 end
 
@@ -241,6 +254,9 @@ function frobenius(g)
 	sigma_g = sigma(g)
 	fj = R(1)
 	for j = 0:frob_prec-1
+		if DEBUG
+			@assert binomial(-d,j) * binomial(d+frob_prec-1,d+j) == big(binomial(-d,j)) * big(binomial(d+frob_prec-1,d+j))
+		end
 		summer +=  binomial(-d,j) * binomial(d+frob_prec-1,d+j) * sigma_g*sigma(fj)
 		fj *= f
 	end
@@ -253,7 +269,6 @@ end
 
 
 # qr_dict = Dict{spoly{n_Zn},Vector{Vector{Vector{Any}}}}
-# syntax: merge!(qr_dict, Dict(x => [x,y,z]))
 P1 = nothing
 # TODO: sizehint?
 qr_dict = Dict()
@@ -264,10 +279,10 @@ for scale = 1:n#+1
 	P = polyhedron(vrep(vertex_set),lib)
 	tuples = Base.Iterators.product([0:(maximum(maximum.(vertex_set))) for i in 1:n-1]...)
 	net = polyhedron(vrep(vec([[i for i in aa] for aa in tuples])),lib)
-	Net = [a for a in points(net)]
+	Net = [Integer.(a) for a in points(net)]
 	Net = filter(a -> all([in(a,h) for h in halfspaces(hrep(P))]), Net)
-	integer_points = Net
-	monomial_int = [affine_vector_to_monomial(Int.(pt),scale) for pt in integer_points]
+	# integer_points = Net
+	monomial_int = [affine_vector_to_monomial(pt,scale) for pt in Net]
 	if scale == 1
 		global P1 = monomial_int
 	end
@@ -278,6 +293,7 @@ for scale = 1:n#+1
 		# TODO: lift groebner??
 		quo = Singular.lift(I,Ideal(R,quo))[1][1] #Ideal, subideal
 		quo =  [[[a[2],a[3]] for a in quo if a[1] == i] for i = 1 : n]
+		# todo: not vectorized
 		quo = [vector_to_polynomial(a) for a in quo]
 		# now q looks like 
 
@@ -293,54 +309,6 @@ end
 
 R_dict = Dict()
 
-
-# In: u, h such that g = x^u * h
-# Out: 
-function reduce_monomial(u,h)
- 
-	# write h = \sum g_i x_i df/dx_i + \sum c_j mu_lj
-	# then  x^u h \equiv 1/(const) * x^u (sum_i ui gi  + xi dgi/dxi) + \sum c_j mu_lj
-	# println(h, parent(h))
-	h_R = h
-	ring = parent(h)
-	u_coefficient = 1
-	if parent(u[1]) == S
-		ring = S
-		ideal = I_S_std
-		h = change_ring(h,S)
-		h_R = change_ring(h,R)
-		if change_ring(h_R,ring) != h
-			# literally h / h_R
-			u_coefficient = prod(Sgens[n+1:end].^(collect(exponent_vectors(h))[1][n+1:end]))
-		end
-	end
-
-
-	if reduce(h,ideal) == h
-		# I'm confused why this doesn't return x^u h
-		return h
-	end
-	# r and q are backwards in sage :(
-	q,r = qr_dict[h_R]
-
-	ans = u_coefficient * change_ring(r + toric_derivative_vector(q),ring)
-
-	mons = collect(monomials(ans))
-	coeffs = collect(coefficients(ans))
-	# println(q,r,u,h)
-	if ans != ring(0)
-		ans = sum([coeffs[i] * reduce_monomial(u,mons[i]) for i = 1 : size(coeffs,1)])
-	end
-
-	for i = 1:n
-    	ri_mons = [u_coefficient*change_ring(a,ring) for a in collect(monomials(q[i]))]
-    	ri_coeffs = collect(coefficients(q[i]))
-    	for j = 1 :size(ri_coeffs,1)
-    		ans += u[i] * ri_coeffs[j] * reduce_monomial(u,ri_mons[j])
-        end
-    end
-    return ans
-end
 
 function compute_psi_basis()
 	psi_basis = spoly{n_Zn}[R(1)]
@@ -370,7 +338,7 @@ function compute_psi_basis()
 			b_R = change_ring(b,R)
 			for monomial in map(R_to_J, monomials(qr_dict[b_R][2]))
 				if !(monomial in psi_basis_pure)
-					if reduce(monomial,primitive_ideal_std) != 0
+					if Singular.reduce(monomial,primitive_ideal_std) != 0
 						push!(psi_basis_pure,monomial)
 						primitive_ideal = Ideal(J,psi_basis_pure)
 						primitive_ideal_std = std(primitive_ideal)
@@ -385,39 +353,72 @@ end
 
 
 psi_basis = compute_psi_basis()
-println(size(psi_basis,1))
+len_psi_basis = size(psi_basis,1)
+println(len_psi_basis)
 
 
-sv_dict = Dict()
+# this has been rewritten and is probably correct
+
+# In: u, h such that g = x^u * h
+# Out: m where R(m) \in psi_basis
+function reduce_monomial(u,h)
+
+	# write h = \sum g_i x_i df/dx_i + \sum c_j mu_lj
+	# then  x^u h \equiv x^u [1/(const) (sum_i ui gi  + xi dgi/dxi) + \sum c_j mu_lj ]
+	
+
+	# We'll treat h = h_S as an element of S, and use h_R = R(h)
 
 
-function R_to_S(g)
-	return prod(Sgens[1:n].^(collect(exponent_vectors(g))[1]))
+	# We can assume parent(u) == S
+	if DEBUG
+		@assert parent(u[1]) == S
+		@assert parent(h) == S
+	end
+
+	h_R = change_ring(h,R)
+
+	# since h is a monomial, we can consider only the U term in front
+	u_coefficient = prod(Sgens[n+1:end].^(collect(exponent_vectors(h))[1][n+1:end]))
+
+
+	if DEBUG
+		@assert change_ring(h_R,S) * u_coefficient == h
+	end
+
+	# if h_R is in psi_basis, then g = x^u h is already reduced
+	if Singular.reduce(h_R,I_std) == h_R
+		return h
+	end
+
+	# we write h_R = sum_i gi xi df/dxi + (remainder)
+	#              = q + r
+	q,r = qr_dict[h_R]
+	q_S = sum([u[i]*change_ring(q[i],S) for i = 1:n])
+
+	ans = u_coefficient * (change_ring(r + toric_derivative_vector(q),S) + q_S)
+
+
+    # now we need to reduce all monomials in ans
+    ans_mons = collect(monomials(ans))
+    ans_coeffs = collect(coefficients(ans))
+    num_coeffs = size(ans_coeffs,1)
+
+    return sum([ans_coeffs[i]*reduce_monomial(u,ans_mons[i]) for i = 1:num_coeffs])
 end
 
-function J_to_S(g)
-	return change_ring(g,S)
-end
 
-function poly_J_to_S(g)
-	return change_ring(g,S)
-end
-
-
-
-# assemble info from sv_dict into a dict of matrices
 
 s_dict = Dict()
-len_psi_basis = size(psi_basis,1)
+
 
 
 # I think this calculation works
+# I no longer think this works
 function compute_s_dict_v(v)
 	mat = [[S(0) for a = 1:len_psi_basis] for aa = 1:len_psi_basis]
 	for i = 1:len_psi_basis
-		sv_dict[psi_basis[i],v] = reduce_monomial(U, v*psi_basis[i])
-		row_vec = sv_dict[psi_basis[i],v]
-		# println(row_vec)
+		row_vec = reduce_monomial(U, change_ring(v*psi_basis[i],S))
 		row_vec_monomials = collect(monomials(row_vec))
 		row_vec_coeffs = collect(coefficients(row_vec))
 		for j = 1:size(row_vec_coeffs,1)
@@ -426,21 +427,19 @@ function compute_s_dict_v(v)
 			u_coefficient = prod(Sgens[n+1:end].^(collect(exponent_vectors(h))[1][n+1:end]))
 			mon_index = findall(xx->xx==h_R,psi_basis)
 
-			# can this be empty if X is smooth?
 			if DEBUG
 				if isempty(mon_index)
 					println(h_R," not contained in ", psi_basis)
 				end
 			end
-			# if !isempty(mon_index)
-				mat[i][mon_index[1]] = mat[i][mon_index[1]] + u_coefficient * row_vec_coeffs[j]
-			# end
-
+			
+			mat[i][mon_index[1]] = mat[i][mon_index[1]] + u_coefficient * row_vec_coeffs[j]
 		end
 	end
 	s_dict[v] = mat
 end
 
+# this has bugs!
 function reduce_uv(monomial, coeff)
 	u = monomial_to_vector(monomial)
 	g = transpose([R(0) for a = 1:len_psi_basis])
@@ -449,36 +448,40 @@ function reduce_uv(monomial, coeff)
 
 		v_vec = monomial_to_vector(v)
 		if all(u.>=v_vec)
-			if !(v in keys(s_dict))
+			if !haskey(s_dict,v)
 				compute_s_dict_v(v)
 			end
-			mat = s_dict[v]
+			# mat = s_dict[v]
+			mat = transpose(reduce(hcat,s_dict[v]))
 			while all(u.>=v_vec)
 
-				for ii = 1:n
-					u[ii] -= v_vec[ii]
-				end
+				u .-= v_vec
+
 				m = 1
 				if n == 3
-
-					m = [[evaluate(a,[0,0,0,u[1],u[2],u[3]]) for a in aa] for aa in mat]
+					m = [evaluate(a,[0,0,0,u[1],u[2],u[3]]) for a in mat]
+					# m = [[evaluate(a,[0,0,0,u[1],u[2],u[3]]) for a in aa] for aa in mat]
 				elseif n == 4
-					
-					m = [[evaluate(a,[0,0,0,0,u[1],u[2],u[3],u[4]]) for a in aa] for aa in mat]
+					m = [evaluate(a,[0,0,0,0,u[1],u[2],u[3],u[4]]) for a in mat]
+					# m = [[evaluate(a,[0,0,0,0,u[1],u[2],u[3],u[4]]) for a in aa] for aa in mat]
 				else
 					println("error: not implemented for n > 4")
 				end
 				# todo: learn how to write matrices properly
-				m = transpose(reduce(hcat, m))
+
+				# m = transpose(reduce(hcat, m))
 				g = g*m
 			end
 		end
 	end
-	h = sum([g[ii] * psi_basis[ii] for ii = 1:len_psi_basis])
-    return h
+	# why are these different!?!?
+
+	# return sum(g .* psi_basis)
+	return sum([g[ii] * psi_basis[ii] for ii = 1:len_psi_basis])
+
 end
 
-frob_matrix = [[zp(0) for i =1:len_B] for j =1:len_B]
+frob_matrix = [[zp(0) for i = 1:len_B] for j = 1:len_B]
 
 # println(len_B)
 
@@ -493,10 +496,45 @@ end
 
 cache_reduction = Dict()
 
+# this is broken
 # todo: reduce everything in psi_basis
-function reduce_to_basis(g)
-	g  = change_ring(g,J)
+# function reduce_to_basis(g)
+# 	# println(g)
+# 	# g  = change_ring(g,J)
 
+# 	g_mons = collect(monomials(g))
+# 	g_coeffs = collect(coefficients(g))
+# 	ans = R(0)
+# 	for j = 1 : size(g_coeffs,1)
+# 		mon = g_mons[j]
+# 		if !haskey(cache_reduction,mon)
+# 			rem = Singular.reduce(mon, I_std)  # poly, ideal
+# 			if rem == mon
+# 				cache_reduction[mon] = mon
+# 			else
+# 				quo = mon - rem
+# 				quo = Singular.lift(I,Ideal(R,quo))[1][1] #Ideal, subideal
+# 				quo =  [[[a[2],a[3]] for a in quo if a[1] == i] for i = 1 : n]
+# 				quo = [vector_to_polynomial(a) for a in quo]
+# 				dict_ans = rem + toric_derivative_vector(quo)
+
+# 				if degree(dict_ans) > 0
+# 					dict_mons = collect(monomials(dict_ans))
+# 					dict_coeffs = collect(coefficients(dict_ans))
+# 					s = size(dict_coeffs,1)
+# 					dict_ans = sum([dict_coeffs[i]*reduce_to_basis(dict_mons[i]) for i = 1:s])
+# 				end
+
+# 				cache_reduction[mon] = dict_ans
+# 			end
+# 		end
+# 		ans += g_coeffs[j] * cache_reduction[mon]
+# 	end
+# 	return change_ring(ans,R)
+# end
+
+function final_reduce_to_basis(g)
+	g  = change_ring(g,J)
 	g_mons = collect(monomials(g))
 	g_coeffs = collect(coefficients(g))
 	ans = J(0)
@@ -519,7 +557,6 @@ function reduce_to_basis(g)
 					dict_ans += sum([change_ring(quo[i],J)*gens(ideal)[i] for i = 1 : s])
 					monomial_to_reduce = rem
 				end
-
 			end
 			cache_reduction[mon] = dict_ans
 		end
@@ -540,29 +577,31 @@ for i = 1:len_B
 
     	h = reduce_uv(mons[k],coeffs[k])
     	if h != 0
-    		h = reduce_to_basis(h)
+    		# h = reduce_to_basis(h)
+    		# ans_mons = collect(monomials(h))
+	    	# ans_coeffs = collect(coefficients(h))
+	    	# h = sum([factorial(max(0,degree(ans_mons[j])-1)) * ans_mons[j]*ans_coeffs[j] for j=1:size(ans_coeffs,1)])
+
+    		h = final_reduce_to_basis(h)
 	        ans_mons = collect(monomials(h))
 	    	ans_coeffs = collect(coefficients(h))
 	    	denom = zp(factorial(big(degree(mons[k])-1)))
 
-	    	ans_coeffs = [numerator(a // denom)*invmod(Int(BigInt(denominator(a // denom))),p^prec) for a in ans_coeffs]
+	    	ans_coeffs = [numerator(a // denom)*zp(invmod(BigInt(denominator(a // denom)),p^prec)) for a in ans_coeffs]
 
 	    	# now add to frob matrix
 	    	for j = 1:size(ans_coeffs,1)
-	    		# mon = reduce_to_basis(ans_mons[j])
-	    	# for j = 1:size(ans_coeffs,1)
 	    		mon_index = findall(xx->xx==ans_mons[j],B)
 	    		if isempty(mon_index) #!?
 	    			println("error: ", ans_mons[j])
+	    		else
+	    			frob_matrix[i][mon_index[1]] = frob_matrix[i][mon_index[1]]+ans_coeffs[j]
 	    		end
-
-	    		frob_matrix[i][mon_index[1]] = frob_matrix[i][mon_index[1]]+ans_coeffs[j]
 	    	end
 	    end
     end
 end
         
-# frob_matrix = matrix(frob_matrix)
+
 println(frob_matrix)
-# print(frob_matrix.characteristic_polynomial())
-# print(frob_matrix.characteristic_polynomial() % p^prec)
+
