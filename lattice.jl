@@ -7,8 +7,8 @@ lib = DefaultLibrary{Int64}(GLPK.Optimizer)
 DEBUG = true
 
 
-p = 11
-# p = 13
+# p = 11
+p = 13
 # n = 4
 # d = 4
 # len_B = (-1)^(n)*Integer(((1-d)^(n)-1)/d+1)
@@ -25,14 +25,18 @@ include("aux_functions.jl")
 # frob_prec = arithmetic_prec
 # prec = desired_prec
 
-prec = 12
-frob_prec = 8
+prec = 3
+frob_prec = 2
 
 # prec = n
 # prec = n+1
 
 # use documentation from https://oscar-system.github.io/Singular.jl/latest/ideal/
 zp = residue_ring(ZZ, p^prec)
+if big(p)^prec > -1 + 2^63
+	residue_ring(ZZ, big(p)^prec)
+	println("warning: using big ints for large modulus ",big(p)^prec)
+end
 
 # R, (w, x, y, z) = polynomial_ring(zp, ["w", "x", "y", "z"])
 # weight = [1,1,1,1]
@@ -428,21 +432,22 @@ function compute_s_dict_v(v)
 			mon_index = findall(xx->xx==h_R,psi_basis)
 
 			if DEBUG
-				if isempty(mon_index)
+				@assert h == change_ring(h_R,S) * u_coefficient
+				if isempty(mon_index)	
 					println(h_R," not contained in ", psi_basis)
 				end
 			end
 			
-			mat[i][mon_index[1]] = mat[i][mon_index[1]] + u_coefficient * row_vec_coeffs[j]
+			mat[i][mon_index[1]] += u_coefficient * row_vec_coeffs[j]
 		end
 	end
-	s_dict[v] = mat
+	s_dict[v] = reduce(hcat,mat)
 end
 
-# this has bugs!
+# this has bugs?
 function reduce_uv(monomial, coeff)
 	u = monomial_to_vector(monomial)
-	g = transpose([R(0) for a = 1:len_psi_basis])
+	g = [R(0) for a = 1:len_psi_basis]
 	g[1] = coeff
 	for v in P1
 
@@ -451,8 +456,7 @@ function reduce_uv(monomial, coeff)
 			if !haskey(s_dict,v)
 				compute_s_dict_v(v)
 			end
-			# mat = s_dict[v]
-			mat = transpose(reduce(hcat,s_dict[v]))
+			mat = s_dict[v]
 			while all(u.>=v_vec)
 
 				u .-= v_vec
@@ -460,28 +464,18 @@ function reduce_uv(monomial, coeff)
 				m = 1
 				if n == 3
 					m = [evaluate(a,[0,0,0,u[1],u[2],u[3]]) for a in mat]
-					# m = [[evaluate(a,[0,0,0,u[1],u[2],u[3]]) for a in aa] for aa in mat]
 				elseif n == 4
 					m = [evaluate(a,[0,0,0,0,u[1],u[2],u[3],u[4]]) for a in mat]
-					# m = [[evaluate(a,[0,0,0,0,u[1],u[2],u[3],u[4]]) for a in aa] for aa in mat]
 				else
 					println("error: not implemented for n > 4")
 				end
-				# todo: learn how to write matrices properly
-
-				# m = transpose(reduce(hcat, m))
-				g = g*m
+				g = m*g
 			end
 		end
 	end
-	# why are these different!?!?
-
-	# return sum(g .* psi_basis)
-	return sum([g[ii] * psi_basis[ii] for ii = 1:len_psi_basis])
-
+	return sum(g .* psi_basis)
 end
 
-frob_matrix = [[zp(0) for i = 1:len_B] for j = 1:len_B]
 
 # println(len_B)
 
@@ -496,42 +490,6 @@ end
 
 cache_reduction = Dict()
 
-# this is broken
-# todo: reduce everything in psi_basis
-# function reduce_to_basis(g)
-# 	# println(g)
-# 	# g  = change_ring(g,J)
-
-# 	g_mons = collect(monomials(g))
-# 	g_coeffs = collect(coefficients(g))
-# 	ans = R(0)
-# 	for j = 1 : size(g_coeffs,1)
-# 		mon = g_mons[j]
-# 		if !haskey(cache_reduction,mon)
-# 			rem = Singular.reduce(mon, I_std)  # poly, ideal
-# 			if rem == mon
-# 				cache_reduction[mon] = mon
-# 			else
-# 				quo = mon - rem
-# 				quo = Singular.lift(I,Ideal(R,quo))[1][1] #Ideal, subideal
-# 				quo =  [[[a[2],a[3]] for a in quo if a[1] == i] for i = 1 : n]
-# 				quo = [vector_to_polynomial(a) for a in quo]
-# 				dict_ans = rem + toric_derivative_vector(quo)
-
-# 				if degree(dict_ans) > 0
-# 					dict_mons = collect(monomials(dict_ans))
-# 					dict_coeffs = collect(coefficients(dict_ans))
-# 					s = size(dict_coeffs,1)
-# 					dict_ans = sum([dict_coeffs[i]*reduce_to_basis(dict_mons[i]) for i = 1:s])
-# 				end
-
-# 				cache_reduction[mon] = dict_ans
-# 			end
-# 		end
-# 		ans += g_coeffs[j] * cache_reduction[mon]
-# 	end
-# 	return change_ring(ans,R)
-# end
 
 function final_reduce_to_basis(g)
 	g  = change_ring(g,J)
@@ -565,6 +523,9 @@ function final_reduce_to_basis(g)
 	return change_ring(ans,R)
 end
 
+frob_matrix = [[zp(0) for i = 1:len_B] for j = 1:len_B]
+
+
 for i = 1:len_B
     fro = frobenius_on_cohom(i)
     println(B[i])
@@ -580,14 +541,17 @@ for i = 1:len_B
     		# h = reduce_to_basis(h)
     		# ans_mons = collect(monomials(h))
 	    	# ans_coeffs = collect(coefficients(h))
-	    	# h = sum([factorial(max(0,degree(ans_mons[j])-1)) * ans_mons[j]*ans_coeffs[j] for j=1:size(ans_coeffs,1)])
-
+	    	# h = sum([factorial(max(0,degree(ans_mons[j]))) * ans_mons[j]*ans_coeffs[j] for j=1:size(ans_coeffs,1)])
+ 
     		h = final_reduce_to_basis(h)
 	        ans_mons = collect(monomials(h))
 	    	ans_coeffs = collect(coefficients(h))
-	    	denom = zp(factorial(big(degree(mons[k])-1)))
-
-	    	ans_coeffs = [numerator(a // denom)*zp(invmod(BigInt(denominator(a // denom)),p^prec)) for a in ans_coeffs]
+	    	# this is the right denom
+	    	denom = factorial(big(degree(mons[k])-1))
+	    	ans_coeffs = BigInt.(ans_coeffs)
+	    	ans_coeffs //= denom
+	    	ans_coeffs = [numerator(a) * invmod(denominator(a),big(p)^prec) for a in ans_coeffs]
+	    	ans_coeffs = [zp(a) for a in ans_coeffs]
 
 	    	# now add to frob matrix
 	    	for j = 1:size(ans_coeffs,1)
