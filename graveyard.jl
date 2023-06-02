@@ -1,37 +1,34 @@
 
-# this is broken
-# todo: reduce everything in psi_basis
-# function reduce_to_basis(g)
-# 	# println(g)
-# 	# g  = change_ring(g,J)
+shifted_B = [divide_by_x1xn(b) for b in B]
+reduction_dict = Dict()
 
-# 	g_mons = collect(monomials(g))
-# 	g_coeffs = collect(coefficients(g))
-# 	ans = R(0)
-# 	for j = 1 : size(g_coeffs,1)
-# 		mon = g_mons[j]
-# 		if !haskey(cache_reduction,mon)
-# 			rem = Singular.reduce(mon, I_std)  # poly, ideal
-# 			if rem == mon
-# 				cache_reduction[mon] = mon
-# 			else
-# 				quo = mon - rem
-# 				quo = Singular.lift(I,Ideal(R,quo))[1][1] #Ideal, subideal
-# 				quo =  [[[a[2],a[3]] for a in quo if a[1] == i] for i = 1 : n]
-# 				quo = [vector_to_polynomial(a) for a in quo]
-# 				dict_ans = rem + toric_derivative_vector(quo)
+function reduce_to_basis(g)
+	summer = 0
 
-# 				if degree(dict_ans) > 0
-# 					dict_mons = collect(monomials(dict_ans))
-# 					dict_coeffs = collect(coefficients(dict_ans))
-# 					s = size(dict_coeffs,1)
-# 					dict_ans = sum([dict_coeffs[i]*reduce_to_basis(dict_mons[i]) for i = 1:s])
-# 				end
+# maybe could make this a set
+	term_list = collect(terms(g))
+	while !isempty(term_list)
+		term = pop!(term_list)
+		# println(term)
+		coeff = collect(coefficients(term))[1]
+		mon = collect(monomials(term))[1]
+		if !(mon in shifted_B)
+			if !haskey(reduction_dict,mon)
+				# reduce it
+				rem = Singular.reduce(mon, I_f_std)  # poly, ideal
+				quo = mon - rem
+				quo = Singular.lift(I_f,Ideal(R,quo))[1][1] #Ideal, subideal
+				quo =  [[[a[2],a[3]] for a in quo if a[1] == i] for i = 1 : n]
+				quo = [vector_to_polynomial(a) for a in quo]
 
-# 				cache_reduction[mon] = dict_ans
-# 			end
-# 		end
-# 		ans += g_coeffs[j] * cache_reduction[mon]
-# 	end
-# 	return change_ring(ans,R)
-# end
+				reduction_dict[mon] = rem + sum([derivative(quo[i],Rgens[i]) for i = 1:n])
+
+			end
+			result = coeff * reduction_dict[mon]
+			term_list = [term_list; collect(terms(result))]
+		else
+			summer += term
+		end
+	end
+	return summer
+end

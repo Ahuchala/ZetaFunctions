@@ -75,3 +75,16 @@ function toric_derivative_vector(g)
 	end
 	return ans
 end
+
+# for debugging
+# returns g / x1x2...xn
+function divide_by_x1xn(g)
+	coeffs = collect(coefficients(g))
+	exps = collect(exponent_vectors(g))
+	if DEBUG
+		@assert all([all(>(0),a) for a in exps])
+	end
+	len_coeffs = size(coeffs,1)
+	return sum([coeffs[i] * prod(gens(parent(g)).^(exps[i].-1)) for i = 1:len_coeffs])
+end
+

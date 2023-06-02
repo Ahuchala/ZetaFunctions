@@ -82,6 +82,9 @@ println("Using arithmetic with precision p^",prec," and frobenius precision ", f
 df = [Rgens[i] * derivative(f,Rgens[i]) for i = 1:n]
 I = Ideal(R,df)
 I_std = std(I)
+
+# I_f = Ideal(R,[derivative(f,Rgens[i]) for i = 1:n])
+# I_f_std = std(I_f)
 if n == 3
 	J, (x,y,z) = QuotientRing(R, I_std)
 else
@@ -264,11 +267,13 @@ function frobenius(g)
 		summer +=  binomial(-d,j) * binomial(d+frob_prec-1,d+j) * sigma_g*sigma(fj)
 		fj *= f
 	end
-	return summer
+	return summer 
 end
 
 function frobenius_on_cohom(i)
 	return frobenius(B[i]) * p^(n-2)
+	# this is what I think it should be...
+	# return divide_by_x1xn(frobenius(B[i])) * p
 end
 
 
@@ -398,7 +403,11 @@ function reduce_monomial(u,h)
 	# we write h_R = sum_i gi xi df/dxi + (remainder)
 	#              = q + r
 	q,r = qr_dict[h_R]
+
+	
 	q_S = sum([u[i]*change_ring(q[i],S) for i = 1:n])
+	# costa writes u[i]+1...
+	# q_S = sum([(u[i]+1)*change_ring(q[i],S) for i = 1:n])
 
 	ans = u_coefficient * (change_ring(r + toric_derivative_vector(q),S) + q_S)
 
@@ -457,7 +466,7 @@ function reduce_uv(monomial, coeff)
 				compute_s_dict_v(v)
 			end
 			mat = s_dict[v]
-			while all(u.>=v_vec)
+			while all(u.>=v_vec) ##&& degree(vector_to_monomial(u))> fdegree
 
 				u .-= v_vec
 
@@ -473,7 +482,7 @@ function reduce_uv(monomial, coeff)
 			end
 		end
 	end
-	return sum(g .* psi_basis)
+	return vector_to_monomial(u)*sum(g .* psi_basis)
 end
 
 
@@ -483,6 +492,8 @@ end
 
 graded_I_B = []
 graded_I_B_std = []
+
+
 for i = 1 : max_degree_B
 	global graded_I_B = [graded_I_B ; Ideal(J,filter(a -> (degree(a) == i),B))]
 	global graded_I_B_std = [graded_I_B_std; std(Ideal(J,filter(a -> (degree(a) == i),B)))]
@@ -523,6 +534,9 @@ function final_reduce_to_basis(g)
 	return change_ring(ans,R)
 end
 
+
+
+
 frob_matrix = [[zp(0) for i = 1:len_B] for j = 1:len_B]
 
 
@@ -537,12 +551,15 @@ for i = 1:len_B
     	# could and should also cache this factorial thing
 
     	h = reduce_uv(mons[k],coeffs[k])
+    	# h .*= vector_to_monomial(u)
+    	# println(mons)
+    	println(h)
     	if h != 0
     		# h = reduce_to_basis(h)
     		# ans_mons = collect(monomials(h))
 	    	# ans_coeffs = collect(coefficients(h))
 	    	# h = sum([factorial(max(0,degree(ans_mons[j]))) * ans_mons[j]*ans_coeffs[j] for j=1:size(ans_coeffs,1)])
- 
+ 			# h = reduce_to_basis(h)
     		h = final_reduce_to_basis(h)
 	        ans_mons = collect(monomials(h))
 	    	ans_coeffs = collect(coefficients(h))
