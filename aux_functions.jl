@@ -93,3 +93,47 @@ function divide_by_x1xn(g)
 	return sum([coeffs[i] * prod(gens(parent(g)).^(exps[i].-1)) for i = 1:len_coeffs])
 end
 
+
+# g must be homogeneous
+function reduce_polynomial(g)
+	if g == 0
+		return g
+	end
+	if degree(g) < 1
+		return g
+	end
+
+	# rem = 0
+	
+	rem = Singular.reduce(g,I_std)
+	quo,r = Singular.lift(I,Ideal(R,g-rem))
+
+
+	# g_J = change_ring(g,J)
+	# deg = degree(g)
+
+	
+	# ideal = graded_B[deg]
+	# ideal_std = graded_B_std[deg]
+	# # ideal_J = graded_B_J[deg]
+	# # ideal_J_std = graded_B_J_std[deg]
+
+	# rem = Singular.reduce(g,ideal_std)
+	# h = g - rem
+	# g = rem
+	# rem = h
+
+
+	# rem += Singular.reduce(g,I_std)
+	# quo,r = Singular.lift(I,Ideal(R,g-rem))
+	quo = quo[1]
+	s = n
+	# s = size(gens(ideal_J),1)
+	quo =  [[[a[2],a[3]] for a in quo if a[1] == j] for j = 1 : s]
+	quo = [vector_to_polynomial(a) for a in quo]
+
+	ans = toric_derivative_vector(quo)
+	# println(g)
+	return rem + reduce_polynomial(ans)
+
+end

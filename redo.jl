@@ -8,7 +8,7 @@ DEBUG = true
 
 
 # p = 389
-p = 23
+p = 11
 # n = 4
 # d = 4
 # len_B = (-1)^(n)*Integer(((1-d)^(n)-1)/d+1)
@@ -39,7 +39,6 @@ prec = 3
 # zp = residue_ring(ZZ, p^prec)
 zp = QQ
 
-include("aux_functions.jl")
 
 if zp != QQ
 	if big(p)^prec > -1 + 2^63
@@ -86,6 +85,8 @@ println("Using arithmetic with precision p^",prec," and frobenius precision ", f
 df = [Rgens[i] * derivative(f,Rgens[i]) for i = 1:n]
 I = Ideal(R,df)
 I_std = std(I)
+
+include("aux_functions.jl")
 
 
 if n == 3
@@ -249,12 +250,16 @@ function compute_primitive_cohomology()
 	return cohomology_basis
 end
 
-# B = [z^8, x^2*y*z, x*y^2*z, x*y*z^2, y*z^7, x*z^7]
-B= [x*y*z,z^6]
-B = [change_ring(blah,R) for blah in B]
+# B = [z^8, x^2*y*z, x*y^2*z, x*y*z^2, y*z^7, x*z^7]	
+# B= [x*y*z,z^6]
+# B = [change_ring(blah,R) for blah in B]
 
+# this is the notation of the paper
+B = compute_primitive_cohomology()
 
-# B = compute_primitive_cohomology()
+# this makes it agree with the basis used by Singular lifts
+B = Set(collect(flatten([collect(monomials(Singular.reduce(blah,I_std))) for blah in B])))
+B = [blah for blah in B]
 
 
 println(B)
@@ -506,49 +511,7 @@ reduction_matrix .= ZERO
 
 cache_reduction = Dict()
 
-# g must be homogeneous
-function reduce_polynomial(g)
-	if g == 0
-		return g
-	end
-	if degree(g) < 1
-		return g
-	end
 
-	# rem = 0
-	
-	rem = Singular.reduce(g,I_std)
-	quo,r = Singular.lift(I,Ideal(R,g-rem))
-
-
-	# g_J = change_ring(g,J)
-	# deg = degree(g)
-
-	
-	# ideal = graded_B[deg]
-	# ideal_std = graded_B_std[deg]
-	# # ideal_J = graded_B_J[deg]
-	# # ideal_J_std = graded_B_J_std[deg]
-
-	# rem = Singular.reduce(g,ideal_std)
-	# h = g - rem
-	# g = rem
-	# rem = h
-
-
-	# rem += Singular.reduce(g,I_std)
-	# quo,r = Singular.lift(I,Ideal(R,g-rem))
-	quo = quo[1]
-	s = n
-	# s = size(gens(ideal_J),1)
-	quo =  [[[a[2],a[3]] for a in quo if a[1] == j] for j = 1 : s]
-	quo = [vector_to_polynomial(a) for a in quo]
-
-	ans = toric_derivative_vector(quo)
-	# println(g)
-	return rem + reduce_polynomial(ans)
-
-end
 
 function compute_reduction_matrix()
 	for ind = 1:size_Pn
