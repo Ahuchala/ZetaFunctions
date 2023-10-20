@@ -8,7 +8,7 @@ DEBUG = true
 
 
 # p = 389
-p = 13
+p = 11
 # n = 4
 # d = 4
 # len_B = (-1)^(n)*Integer(((1-d)^(n)-1)/d+1)
@@ -27,9 +27,8 @@ include("aux_functions.jl")
 
 # prec = 4
 # prec = -1
-frob_prec = 2
-# prec = frob_prec+3
-prec = 3
+frob_prec = 3
+prec = frob_prec
 
 
 # prec = n
@@ -205,16 +204,13 @@ function degree(g)
 #     shouldn't matter which one we pick
     mon = collect(monomials(g))[1]
     if DEBUG
-    	# @assert sum(weight .* monomial_to_vector(mon)) % fweight == 0
+    	@assert sum(weight .* monomial_to_vector(mon)) % fweight == 0
     	@assert all([sum(weight .* monomial_to_vector(mon)) == sum(weight .* monomial_to_vector(collect(monomials(g))[i])) for i = 2:size(collect(monomials(g)),1)])
     end
     return sum(weight .* monomial_to_vector(mon)) ÷ fweight
 end
 
 
-function polynomial_degree(g)
-	return maximum([degree(mon) for mon in monomials(g)])
-end
 
 function compute_primitive_cohomology()
 	cohomology_basis = typeof(Rgens[1])[]
@@ -253,10 +249,7 @@ function compute_primitive_cohomology()
 	return cohomology_basis
 end
 
-# B = compute_primitive_cohomology()
-B = [z^8, x^2*y*z, x*y^2*z, x*y*z^2, y*z^7, x*z^7]
-B = [change_ring(blah,R) for blah in B]
-
+B = compute_primitive_cohomology()
 println(B)
 len_B = size(B,1)
 
@@ -297,17 +290,10 @@ function frobenius(g)
 	return summer 
 end
 
-function divide_by_x1xn(g)
-	coeffs = collect(coefficients(g))
-	mons = collect(monomials(g))
-	return sum([vector_to_monomial(monomial_to_vector(mons[i]).-1) * coeffs[i] for i = 1:size(coeffs,1)])
-end
-
 function frobenius_on_cohom(i)
 	# return frobenius(B[i]) * p
-	# return divide_by_x1xn(frobenius(B[i]) * p^(n-2))
+
 	return frobenius(B[i]) * p^(n-2)
-	# return frobenius(divide_by_x1xn(B[i]))* prod(Rgens)*p
 	# this is what I think it should be...
 	# return divide_by_x1xn(frobenius(B[i])) * p
 end
@@ -441,9 +427,9 @@ function reduce_monomial(u,h)
 	q,r = qr_dict[h_R]
 
 	
-	q_S = sum([u[i]*change_ring(q[i],S) for i = 1:n])
+	# q_S = sum([u[i]*change_ring(q[i],S) for i = 1:n])
 	# costa thinks it's u[i]+1 and I do too...
-	# q_S = sum([(u[i]+1)*change_ring(q[i],S) for i = 1:n])
+	q_S = sum([(u[i]+1)*change_ring(q[i],S) for i = 1:n])
 
 	ans = u_coefficient * (change_ring(r + toric_derivative_vector(q),S) + q_S)
 
@@ -499,7 +485,6 @@ end
 
 # this has bugs?
 function reduce_uv(monomial, coeff)
-	# return monomial * coeff
 	u = monomial_to_vector(monomial)
 	g = [R(0) for a = 1:len_psi_basis]
 	g[1] = coeff
@@ -536,101 +521,16 @@ end
 
 
 
-graded_B = []
-graded_B_std = []
+graded_I_B = []
+graded_I_B_std = []
 
-B_J = [change_ring(blah,J) for blah in B]
-
-psi_basis_J = [change_ring(blah,J) for blah in psi_basis]
-# max_degree_psi = maximum([degree(a) for a in psi_basis])
-
-# for i = 0 : max_degree_psi
-# 	global graded_psi = [graded_psi ; Ideal(J,filter(a -> (degree(a) == i),psi_basis_J))]
-# 	global graded_psi_std = [graded_psi_std; std(Ideal(J,filter(a -> (degree(a) == i),psi_basis_J)))]
-# end
 
 for i = 1 : max_degree_B
-	global graded_B = [graded_B ; Ideal(J,filter(a -> (degree(a) == i),B_J))]
-	global graded_B_std = [graded_B_std; std(Ideal(J,filter(a -> (degree(a) == i),B_J)))]
+	global graded_I_B = [graded_I_B ; Ideal(J,filter(a -> (degree(a) == i),B))]
+	global graded_I_B_std = [graded_I_B_std; std(Ideal(J,filter(a -> (degree(a) == i),B)))]
 end
 
 cache_reduction = Dict()
-global reduction_matrix = [[zp(0) for a = 1:len_B] for aa = 1:len_psi_basis]
-
-function compute_reduction_matrix()
-	for ind = 1:len_psi_basis
-		psi = psi_basis_J[ind]
-		if psi == 1
-			if DEBUG
-				@assert(ind == 1)
-				# assert psi_basis is ordered by increasing degree
-			end
-		else
-
-			deg = degree(psi)
-			ideal = graded_B[deg]
-			ideal_std = graded_B_std[deg]
-
-			rem = Singular.reduce(psi,ideal_std)
-			quo,r = Singular.lift(ideal,Ideal(J,psi-rem))
-			quo = quo[1]
-			s = size(gens(ideal),1)
-			quo =  [[[a[2],a[3]] for a in quo if a[1] == j] for j = 1 : s]
-			quo = [vector_to_polynomial(a) for a in quo]
-
-			# TODO: figure out if this works
-			if DEBUG
-				println(psi)
-				@assert(rem == 0 || deg == 1) #??
-			end
-			# cache_reduction[psi] = sum([change_ring(quo[ind],J)*gens(ideal)[ind] for ind = 1 : s])
-			ans = sum([change_ring(quo[j],J)*gens(ideal)[j] for j = 1 : s])
-
-			ans_coeffs = collect(coefficients(ans))
-			ans_mons = collect(monomials(ans))
-
-			for j = 1:size(ans_coeffs,1)
-	    		mon_index = findall(xx->xx==ans_mons[j],B_J)[1]
-	    		reduction_matrix[ind][mon_index] = ans_coeffs[j]
-	    	end
-	    end
-	end
-
-			# ideal = graded_I_B[j]
-			# 			ideal_std = graded_I_B_std[j]
-			# 			rem = Singular.reduce(monomial_to_reduce,ideal_std)
-			# 			quo,r = Singular.lift(ideal,Ideal(J,monomial_to_reduce-rem))
-			# 			quo = quo[1]
-
-			# 			s = size(gens(ideal),1)
-			# 			quo =  [[[a[2],a[3]] for a in quo if a[1] == ind] for ind = 1 : s]
-			# 			quo = [vector_to_polynomial(a) for a in quo]
-
-						
-			# 			dict_ans += sum([change_ring(quo[ind],J)*gens(ideal)[ind] for ind = 1 : s])
-			# 			monomial_to_reduce = rem
-
-end
-
-compute_reduction_matrix()
-reduction_matrix = transpose(reduce(hcat,reduction_matrix))
-
-function to_psi_basis(h)
-	ans = [zp(0) for blah = 1: len_psi_basis]
-
-	ans_coeffs = collect(coefficients(h))
-	ans_mons = collect(monomials(h))
-
-	for j = 1:size(ans_coeffs,1)
-		mon_index = findall(xx->xx==ans_mons[j],psi_basis)[1]
-		ans[mon_index] = ans_coeffs[j]
-	end
-	return transpose(ans)
-end
-
-function from_B_basis(v)
-	return sum([B[j] * v[j] for j = 1:len_B])
-end
 
 
 function final_reduce_to_basis(g)
@@ -641,54 +541,26 @@ function final_reduce_to_basis(g)
 		g_terms = collect(terms(g))
 		@assert all([g_terms[i] == g_coeffs[i]*g_mons[i] for i = 1:size(g_coeffs,1)])
 	end
-	# ans = J(0)
 	ans = J(0)
-
-
-	for j = max_degree_B:-1:1
-		ideal = graded_B[j]
-		ideal_std = graded_B_std[j]	
-		rem = Singular.reduce(g,ideal_std)
-		quo = Singular.lift(ideal,Ideal(J,g-rem))[1][1]
-		s = size(gens(ideal),1)
-		quo =  [[[a[2],a[3]] for a in quo if a[1] == ind] for ind = 1 : s]
-		quo = [vector_to_polynomial(a) for a in quo]
-		ans += sum([change_ring(quo[ind],J)*gens(ideal)[ind] for ind = 1 : s])
-		g = rem
-	end
-
-
 	for i = 1 : size(g_coeffs,1)
 		mon = g_mons[i]
 		if !haskey(cache_reduction,mon)
 			dict_ans = J(0)
 			monomial_to_reduce = mon
-			# for j  = 1:max_degree_B
-			rem = 0
 			for j = max_degree_B:-1:1
 				if !iszero(monomial_to_reduce)
 					monomial_to_reduce = change_ring(monomial_to_reduce,J)
-					ideal = graded_B[j]
-					ideal_std = graded_B_std[j]
+					ideal = graded_I_B[j]
+					ideal_std = graded_I_B_std[j]
 					rem = Singular.reduce(monomial_to_reduce,ideal_std)
-					quo,r = Singular.lift(ideal,Ideal(J,monomial_to_reduce-rem))
-					quo = quo[1]
-
+					quo = Singular.lift(ideal,Ideal(J,monomial_to_reduce-rem))[1][1]
 					s = size(gens(ideal),1)
 					quo =  [[[a[2],a[3]] for a in quo if a[1] == ind] for ind = 1 : s]
 					quo = [vector_to_polynomial(a) for a in quo]
-
 					
 					dict_ans += sum([change_ring(quo[ind],J)*gens(ideal)[ind] for ind = 1 : s])
 					monomial_to_reduce = rem
 				end
-			end
-			if DEBUG
-
-				if rem != 0
-					println(rem)
-				end 
-				# @assert(rem == 0)
 			end
 			cache_reduction[mon] = dict_ans
 		end
@@ -708,25 +580,6 @@ end
 frob_matrix = [[zp(0) for i = 1:len_B] for j = 1:len_B]
 
 
-# function prepare_basis(h)
-# 	ans = 0
-# 	h = change_ring(h,R)
-# 	while h !=0 && polynomial_degree(h)>0
-# 		rem = Singular.reduce(h,I_std)
-# 		quo = Singular.lift(I,Ideal(R,h-rem))[1][1]
-# 		s = size(gens(I),1)
-# 		quo =  [[[a[2],a[3]] for a in quo if a[1] == ind] for ind = 1 : s]
-# 		quo = [vector_to_polynomial(a) for a in quo]
-# 		ans += rem
-		
-# 		h = sum([Rgens[i] * derivative(quo[i],Rgens[i]) for i = 1 : n])
-# 		# println(h)
-# 	end
-
-# 	h = change_ring(h,J)
-# 	return ans
-# end
-
 for i = 1:len_B
     fro = frobenius_on_cohom(i)
     println(B[i])
@@ -742,24 +595,11 @@ for i = 1:len_B
     	# could and should also cache this factorial thing
 
     	h = reduce_uv(mons[k],coeffs[k])
-    	# h 
-    	h = final_reduce_to_basis(h)
-    	# h = prepare_basis(h)
+    	# h .*= vector_to_monomial(u)
     	# println(mons)
-    	# println(collect(monomials(h)))
-    	# h = from_B_basis(to_psi_basis(h)*reduction_matrix)
+    	# println(h)
     	if h != 0
-    		# ans_mons = collect(monomials(h))
-	    	# ans_coeffs = collect(coefficients(h))
-    		# h = sum([factorial(max(0,degree(ans_mons[j])-1)) * ans_mons[j]*ans_coeffs[j] for j=1:size(ans_coeffs,1)])
-
-    		# ans_mons = collect(monomials(h))
-	    	# ans_coeffs = collect(coefficients(h))
-    		# h = sum([factorial(big(degree(ans_mons[j]))-1)//factorial( big(degree(mons[k])-1)) * ans_mons[j]*ans_coeffs[j] for j=1:size(ans_coeffs,1)])
-
-
-    		# h = final_reduce_to_basis(h)
-
+    		h = final_reduce_to_basis(h)
 	        ans_mons = collect(monomials(h))
 	    	ans_coeffs = collect(coefficients(h))
 	    	if DEBUG
@@ -767,23 +607,23 @@ for i = 1:len_B
 	    		@assert all([ans_terms[i] == ans_coeffs[i]*ans_mons[i] for i = 1:size(ans_coeffs,1)])
 	    	end
 
-	    	# h = sum([factorial(big(degree(ans_mons[j]))-1)//factorial( big(degree(mons[k])-1)) * ans_mons[j]*ans_coeffs[j] for j=1:size(ans_coeffs,1)])
+	    	h = sum([factorial(big(degree(ans_mons[j]))-1)//factorial( big(degree(mons[k])-1)) * ans_mons[j]*ans_coeffs[j] for j=1:size(ans_coeffs,1)])
 
-	    	h = sum([factorial(max(0,degree(ans_mons[j])-1)) * ans_mons[j]*ans_coeffs[j] for j=1:size(ans_coeffs,1)])
+	    	# h = sum([factorial(max(0,degree(ans_mons[j])-1)) * ans_mons[j]*ans_coeffs[j] for j=1:size(ans_coeffs,1)])
  			# h = reduce_to_basis(h)
     		# h = final_reduce_to_basis(h)
-	        # ans_mons = collect(monomials(h))
-	    	# ans_coeffs = collect(coefficients(h))
+	        ans_mons = collect(monomials(h))
+	    	ans_coeffs = collect(coefficients(h))
 	    	if DEBUG
 	    		ans_terms = collect(terms(h))
 	    		@assert all([ans_terms[i] == ans_coeffs[i]*ans_mons[i] for i = 1:size(ans_coeffs,1)])
 	    	end
 	    	# this is the right denom
-	    	denom = factorial(big(degree(mons[k]))-1)
+	    	# denom = factorial(big(degree(mons[k]))-1)
 
 	    	if zp == QQ
-	    		ans_coeffs //= denom
-	    		ans_coeffs = BigInt.(numerator.(ans_coeffs)) .* BigInt.([invmod(BigInt(denominator(a)),big(p)^prec) for a in ans_coeffs])
+	    		# ans_coeffs //= denom
+	    		# ans_coeffs = BigInt.(numerator.(ans_coeffs)) .* BigInt.([invmod(BigInt(denominator(a)),big(p)^prec) for a in ans_coeffs])
 	    		
 	    	else
 	    		ans_coeffs = BigInt.(ans_coeffs)
@@ -810,7 +650,7 @@ end
 for i = 1:len_B
 	for j = 1:len_B
 		if zp == QQ
-			frob_matrix[i][j] =zp(mod(BigInt(numerator(frob_matrix[i][j])), p^prec)) * BigInt(invmod(BigInt(denominator(frob_matrix[i][j])),p^prec))
+			# frob_matrix[i][j] =zp(mod(BigInt(numerator(frob_matrix[i][j])), p^prec)) * BigInt(invmod(BigInt(denominator(frob_matrix[i][j])),p^prec))
 		else
 			frob_matrix[i][j] =zp(mod(BigInt(frob_matrix[i][j]), p^prec))
 		end

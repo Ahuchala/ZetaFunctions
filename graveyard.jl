@@ -1,4 +1,7 @@
 
+I_f = Ideal(R,[derivative(f,Rgens[i]) for i = 1:n])
+I_f_std = std(I_f)
+
 shifted_B = [divide_by_x1xn(b) for b in B]
 reduction_dict = Dict()
 

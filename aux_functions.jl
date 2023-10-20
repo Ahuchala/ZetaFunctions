@@ -1,3 +1,5 @@
+ZERO = zp(0)
+
 # in: monomial in R
 # out: monomial in J = R/I
 function R_to_J(g)
@@ -56,9 +58,9 @@ end
 
 
 # returns sum xi dg/dxi, using sum xi d(x^u)/dxi = sum(u) x^u
-# function toric_derivative(g)
-# 	return sum([sum(collect(exponent_vectors(monomial))[1]) * monomial for monomial in monomials(g)])
-# end
+function toric_derivative(g)
+	return sum([sum(collect(exponent_vectors(monomial))[1]) * monomial for monomial in monomials(g)])
+end
 
 # same as toric_derviative, but input is of the form g1,...,gn
 # and returns sum xi dg_i dxi
@@ -72,6 +74,9 @@ function toric_derivative_vector(g)
 		for j = 1:num_coeffs
 			ans += coeff_vec_g[i][j]*mon_vec_g[i][j]*exp_vec_g[i][j][i]
 		end
+	end
+	if DEBUG
+		@assert ans == sum([Rgens[i]*derivative(g[i],Rgens[i]) for i = 1:n])
 	end
 	return ans
 end
