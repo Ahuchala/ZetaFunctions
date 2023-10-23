@@ -8,7 +8,7 @@ DEBUG = true
 
 
 # p = 389
-p = 11
+p = 5
 # n = 4
 # d = 4
 # len_B = (-1)^(n)*Integer(((1-d)^(n)-1)/d+1)
@@ -47,22 +47,22 @@ if zp != QQ
 	end
 end
 
-# R, (w, x, y, z) = polynomial_ring(zp, ["w", "x", "y", "z"])
-# weight = [1,1,1,1]
+R, (w, x, y, z) = polynomial_ring(zp, ["w", "x", "y", "z"])
+weight = [1,1,1,1]
 # f = w^4+2*w*x^3-2*x^4-x^3*y-x^2*y^2-y^4+w^3*z-x^3*z-2*w^2*y*z+2*w*x*y*z-x^2*y*z-w*y^2*z+2*x*y^2*z-2*y^3*z-w^2*z^2-2*w*x*z^2+x^2*z^2-2*w*y*z^2+x*y*z^2+y^2*z^2+2*w*z^3+2*x*z^3-2*y*z^3-2*z^4
-# f = w^4 + x^4 + y^4 + z^4
+f = w^4 + x^4 + y^4 + z^4
 
 
 # TODO: check smoothness, nondegeneracy
 
-R, (x, y, z) = polynomial_ring(zp, ["x", "y", "z"])
+# R, (x, y, z) = polynomial_ring(zp, ["x", "y", "z"])
 # weight = [1,3,1]
 # f = y^2 - x^6 - x^3*z^3
-weight = [1,1,1]
+# weight = [1,1,1]
 # f = x^5 + y^5 + z^5+3*x*y*z^3
 # f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
 # f = x^3 + y^3 + z^3
-f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
+# f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
 
 Rgens = gens(R)
 n = size(Rgens)[1]
@@ -138,6 +138,11 @@ function vector_to_polynomial_J(v)
 		return J(0)
 	end
 	return sum([vector_to_monomial_J(a[1]) * a[2] for a in v])
+end
+
+# warning: untested
+function change_ring_monomial(g,ringB)
+	return ringB(BigInt(collect(coefficients(g))[1]))*prod(gens(ringB)[1:n].^monomial_to_vector(g))
 end
 
 # change a polynomial g to coefficients in ring B
@@ -397,29 +402,36 @@ function compute_R_S(v)
 			mat_R_const_poly = toric_derivative_vector(pi_n)
 			mat_S_poly = sum(v.* pi_n)
 
-			mat_R_const_poly_mons = collect(monomials(mat_R_const_poly))
-			mat_R_const_poly_coeffs = collect(coefficients(mat_R_const_poly))
+			if mat_R_const_poly != 0
 
-			for j = 1 : n
-				mat_R_mu_poly_mons = collect(monomials(pi_n[j]))
-				mat_R_mu_poly_coeffs = collect(coefficients(pi_n[j]))
-				for i = 1 : size(mat_R_mu_poly_mons,1)
-					mon_ind = findall(xx->xx==mat_R_mu_poly_mons[i],Pn)[1]
-					mat_R_mu[mon_ind,ind,j] = mat_R_mu_poly_coeffs[i]
+				mat_R_const_poly_mons = collect(monomials(mat_R_const_poly))
+				mat_R_const_poly_coeffs = collect(coefficients(mat_R_const_poly))
+				for i = 1 : size(mat_R_const_poly_coeffs,1)
+					mon_ind = findall(xx->xx==mat_R_const_poly_mons[i],Pn)[1]
+					mat_R_const[mon_ind,ind] = mat_R_const_poly_coeffs[i]
 				end
 			end
 
-			for i = 1 : size(mat_R_const_poly_coeffs,1)
-				mon_ind = findall(xx->xx==mat_R_const_poly_mons[i],Pn)[1]
-				mat_R_const[mon_ind,ind] = mat_R_const_poly_coeffs[i]
+			for j = 1 : n
+				if pi_n[j] != 0
+					mat_R_mu_poly_mons = collect(monomials(pi_n[j]))
+					mat_R_mu_poly_coeffs = collect(coefficients(pi_n[j]))
+					for i = 1 : size(mat_R_mu_poly_mons,1)
+						mon_ind = findall(xx->xx==mat_R_mu_poly_mons[i],Pn)[1]
+						mat_R_mu[mon_ind,ind,j] = mat_R_mu_poly_coeffs[i]
+					end
+				end
 			end
 
-			mat_S_poly_mons = collect(monomials(mat_S_poly))
-			mat_S_poly_coeffs = collect(coefficients(mat_S_poly))
+				
+			if mat_S_poly != 0
+				mat_S_poly_mons = collect(monomials(mat_S_poly))
+				mat_S_poly_coeffs = collect(coefficients(mat_S_poly))
 
-			for i = 1 : size(mat_S_poly_coeffs,1)
-				mon_ind = findall(xx->xx==mat_S_poly_mons[i],Pn)[1]
-				mat_S[mon_ind,ind] = mat_S_poly_coeffs[i]
+				for i = 1 : size(mat_S_poly_coeffs,1)
+					mon_ind = findall(xx->xx==mat_S_poly_mons[i],Pn)[1]
+					mat_S[mon_ind,ind] = mat_S_poly_coeffs[i]
+				end
 			end
 
 		end
@@ -437,11 +449,20 @@ end
 function reduce_uv(monomial)
 	# return monomial * coeff
 	g = 0
+	u = monomial_to_vector(monomial)
+
 	for pn in Pn
-		if divides(monomial, pn)[1]
+		# if pn divides monomial
+		if all(monomial_to_vector(pn) .<= u)
 			g = pn
 		end
 	end
+	if DEBUG
+		if g == 0
+			println("warning: no monomial divisors found for ", monomial)
+		end
+	end
+
 	monomial = monomial / g
 
 	u = monomial_to_vector(monomial)
@@ -577,7 +598,7 @@ end
 
 
 
-frob_matrix = [[zp(0) for i = 1:len_B] for j = 1:len_B]
+frob_matrix = [[BigInt(0) for i = 1:len_B] for j = 1:len_B]
 
 
 for i = 1:len_B
@@ -601,35 +622,43 @@ for i = 1:len_B
     		denom = factorial(big(degree(mons[k]))-1)
 
 	        ans_mons = collect(monomials(h))
-	    	ans_coeffs = collect(coefficients(h))
+	        ans_coeffs = 1
+	        if zp == QQ
+	        	ans_coeffs = BigInt.(numerator.(collect(coefficients(h)))).//BigInt.(denominator.(collect(coefficients(h))))
+	        else
+	    		ans_coeffs = BigInt.(collect(coefficients(h))).//1
+	    	end
+	    	ans_coeffs = [factorial(max(0,degree(ans_mons[j]))-1) //denom * ans_coeffs[j] for j=1:size(ans_coeffs,1)]
+
+
 	    	if DEBUG
 	    		ans_terms = collect(terms(h))
-	    		@assert all([ans_terms[i] == ans_coeffs[i]*ans_mons[i] for i = 1:size(ans_coeffs,1)])
+	    		# @assert all([ans_terms[i] == ans_coeffs[i]*ans_mons[i] for i = 1:size(ans_coeffs,1)])
 	    	end
 
 	    	# h = sum([factorial(big(degree(ans_mons[j]))-1)//factorial( big(degree(mons[k])-1)) * ans_mons[j]*ans_coeffs[j] for j=1:size(ans_coeffs,1)])
 
-	    	h = sum([factorial(max(0,degree(ans_mons[j]))-1) //denom * ans_mons[j]*ans_coeffs[j] for j=1:size(ans_coeffs,1)])
+	    	# h = sum([factorial(max(0,degree(ans_mons[j]))-1) //denom * ans_mons[j]*ans_coeffs[j] for j=1:size(ans_coeffs,1)])
 	    	if DEBUG
 	    		ans_terms = collect(terms(h))
 	    		# @assert all([ans_terms[i] == ans_coeffs[i]*ans_mons[i] for i = 1:size(ans_coeffs,1)])
 	    	end
 	    	# this is the right denom
-	    	ans_mons = collect(monomials(h))
-	    	ans_coeffs = collect(coefficients(h))
+	    	# ans_mons = collect(monomials(h))
+	    	# ans_coeffs = collect(coefficients(h))
 
 	    	if zp == QQ
 	    		# ans_coeffs //= denom
 	    		ans_coeffs = BigInt.(numerator.(ans_coeffs)) .* BigInt.([invmod(BigInt(denominator(a)),big(p)^prec) for a in ans_coeffs])
 	    		
 	    	else
-	    		ans_coeffs = BigInt.(ans_coeffs)
-	    		ans_coeffs //= denom
-	    		ans_coeffs = [numerator(a) * invmod(denominator(a),big(p)^prec) for a in ans_coeffs]
+	    		# ans_coeffs = BigInt.(ans_coeffs)
+	    		# ans_coeffs //= denom
+	    		ans_coeffs = [BigInt(numerator(a)) * BigInt(invmod(denominator(a),big(p)^prec)) for a in ans_coeffs]
 	    		
 	    	end
 
-	    	ans_coeffs = [zp(a) for a in ans_coeffs]
+	    	# ans_coeffs = [zp(a) for a in ans_coeffs]
 
 	    	# now add to frob matrix
 	    	for j = 1:size(ans_coeffs,1)
@@ -646,11 +675,11 @@ end
         
 for i = 1:len_B
 	for j = 1:len_B
-		if zp == QQ
-			frob_matrix[i][j] =zp(mod(BigInt(numerator(frob_matrix[i][j])), p^prec)) * BigInt(invmod(BigInt(denominator(frob_matrix[i][j])),p^prec))
-		else
-			frob_matrix[i][j] =zp(mod(BigInt(frob_matrix[i][j]), p^prec))
-		end
+		# if zp == QQ
+			frob_matrix[i][j] =(mod(BigInt(numerator(frob_matrix[i][j])), p^prec)) * BigInt(invmod(BigInt(denominator(frob_matrix[i][j])),p^prec))
+		# else
+			# frob_matrix[i][j] =(mod(BigInt(numerator(frob_matrix[i][j])), p^prec)) * BigInt(invmod(BigInt(denominator(frob_matrix[i][j])),p^prec))
+		# end
 	end
 end
 
