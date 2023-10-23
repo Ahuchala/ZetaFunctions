@@ -93,6 +93,13 @@ function divide_by_x1xn(g)
 	return sum([coeffs[i] * prod(gens(parent(g)).^(exps[i].-1)) for i = 1:len_coeffs])
 end
 
+function is_smooth(f)
+	
+end
+
+function compute_weight(f)
+
+end
 
 # g must be homogeneous
 function reduce_polynomial(g)
@@ -102,30 +109,10 @@ function reduce_polynomial(g)
 	if degree(g) < 1
 		return g
 	end
-
-	# rem = 0
 	
 	rem = Singular.reduce(g,I_std)
 	quo,r = Singular.lift(I,Ideal(R,g-rem))
 
-
-	# g_J = change_ring(g,J)
-	# deg = degree(g)
-
-	
-	# ideal = graded_B[deg]
-	# ideal_std = graded_B_std[deg]
-	# # ideal_J = graded_B_J[deg]
-	# # ideal_J_std = graded_B_J_std[deg]
-
-	# rem = Singular.reduce(g,ideal_std)
-	# h = g - rem
-	# g = rem
-	# rem = h
-
-
-	# rem += Singular.reduce(g,I_std)
-	# quo,r = Singular.lift(I,Ideal(R,g-rem))
 	quo = quo[1]
 	s = n
 	# s = size(gens(ideal_J),1)
