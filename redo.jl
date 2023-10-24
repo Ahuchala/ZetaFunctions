@@ -8,7 +8,7 @@ DEBUG = true
 
 
 # p = 389
-p = 11
+p = 7
 # n = 4
 # d = 4
 # len_B = (-1)^(n)*Integer(((1-d)^(n)-1)/d+1)
@@ -27,9 +27,9 @@ p = 11
 
 # prec = 4
 # prec = -1
-frob_prec = 2
+frob_prec = 3
 # prec = frob_prec+3
-prec = 3
+prec = 7
 
 
 # prec = n
@@ -60,11 +60,23 @@ end
 
 R, (x, y, z) = polynomial_ring(zp, ["x", "y", "z"])
 
-# weight = [1,3,1]
+
+# latest todo
+# zp = ZZ
+# R_ZZ, (x,y,z) = polynomial_ring(zp, ["x", "y", "z"])
+# pn_ideal = Ideal(R_ZZ,R_ZZ(p^prec))
+# R,(x, y, z) = QuotientRing(R_ZZ,pn_ideal)
+# zp = QQ
+
+
+weight = [1,3,1]
 # f = y^2 - x^6 - x^3*z^3-z^6
-weight = [1,1,1]
+f = y^2 - (-2*x^6-x^5*z+3*x^4*z^2+x^3*z^3-2*x^2*z^4+x*z^5+3*z^6)
+
+# weight = [1,1,1]
 # f = x^5 + y^5 + z^5+3*x*y*z^3
-f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
+
+# f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
 # f = x^3 + y^3 + z^3
 # f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
 
