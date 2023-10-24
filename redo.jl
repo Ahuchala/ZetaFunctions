@@ -8,7 +8,7 @@ DEBUG = true
 
 
 # p = 389
-p = 5
+p = 11
 # n = 4
 # d = 4
 # len_B = (-1)^(n)*Integer(((1-d)^(n)-1)/d+1)
@@ -37,6 +37,9 @@ prec = 3
 
 # use documentation from https://oscar-system.github.io/Singular.jl/latest/ideal/
 # zp = residue_ring(ZZ, p^prec)
+
+# residue_ring appears bugged, manually truncating precision with
+modular_arithmetic = false
 zp = QQ
 
 
@@ -56,11 +59,12 @@ end
 # TODO: check smoothness, nondegeneracy
 
 R, (x, y, z) = polynomial_ring(zp, ["x", "y", "z"])
-weight = [1,3,1]
-f = y^2 - x^6 - x^3*z^3-z^6
-# weight = [1,1,1]
+
+# weight = [1,3,1]
+# f = y^2 - x^6 - x^3*z^3-z^6
+weight = [1,1,1]
 # f = x^5 + y^5 + z^5+3*x*y*z^3
-# f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
+f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
 # f = x^3 + y^3 + z^3
 # f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
 
@@ -82,11 +86,12 @@ println(binomial(d*(n-1),n-1), ' ', binomial(d*(n-1)+n-1,n-1))
 # frob_prec = Int(ceil(log(2*binomial(k,(k+1)÷2)*p^((n/2)*((k+1)÷2)))/log(p)))
 println("Using arithmetic with precision p^",prec," and frobenius precision ", frob_prec)
 
+include("aux_functions.jl")
+
+
 df = [Rgens[i] * derivative(f,Rgens[i]) for i = 1:n]
 I = Ideal(R,df)
 I_std = std(I)
-
-include("aux_functions.jl")
 
 
 if n == 3
@@ -140,10 +145,6 @@ function vector_to_polynomial_J(v)
 	return sum([vector_to_monomial_J(a[1]) * a[2] for a in v])
 end
 
-# warning: untested
-function change_ring_monomial(g,ringB)
-	return ringB(BigInt(collect(coefficients(g))[1]))*prod(gens(ringB)[1:n].^monomial_to_vector(g))
-end
 
 # change a polynomial g to coefficients in ring B
 function change_ring(g, ringB)
@@ -357,6 +358,9 @@ Net = [Integer.(a) for a in points(net)]
 Net = filter(a -> all([in(a,h) for h in halfspaces(hrep(P))]), Net)
 monomial_int = [affine_vector_to_monomial(pt,scale) for pt in Net]
 for monomial in monomial_int
+
+	# this appears to have bugs in positive characteristic
+
 	rem = Singular.reduce(monomial, I_std)  # poly, ideal
 	quo = monomial - rem
 	# TODO: lift groebner??
@@ -364,12 +368,41 @@ for monomial in monomial_int
 	quo =  [[[a[2],a[3]] for a in quo if a[1] == i] for i = 1 : n]
 	# todo: not vectorized
 	quo = [vector_to_polynomial(a) for a in quo]
+
 	# now q looks like 
 
 	# 3-element Vector{Vector{Vector{Any}}}:
 	#  [[[3, 0, 0], 324], [[2, 1, 0], 98], [[1, 2, 0], 111], [[0, 3, 0], 259], [[2, 0, 1], 49], [[1, 1, 1], 200], [[0, 2, 1], 113], [[1, 0, 2], 166], [[0, 1, 2], 309], [[0, 0, 3], 169]]
 	#  [[[3, 0, 0], 185], [[2, 1, 0], 173], [[1, 2, 0], 256], [[0, 3, 0], 98], [[2, 0, 1], 196], [[1, 1, 1], 325], [[0, 2, 1], 316], [[1, 0, 2], 171], [[0, 1, 2], 21], [[0, 0, 3], 55]]
 	#  [[[3, 0, 0], 136], [[2, 1, 0], 173], [[1, 2, 0], 32], [[0, 3, 0], 329], [[2, 0, 1], 339], [[1, 1, 1], 33], [[0, 2, 1], 103], [[0, 0, 3], 13]]
+
+	# if modular_arithmetic
+	# 	for i = 1 : n
+	# 		quo_mons = collect(monomials(quo[i]))
+	# 		quo_coeffs = collect(coefficients(quo[i]))
+	# 		size_quo_coeffs = size(quo_coeffs,1)
+	# 		if size_quo_coeffs > 0
+	# 			quo_coeffs = [(mod(BigInt(numerator(a)), p^prec)) * BigInt(invmod(BigInt(denominator(a)),p^prec)) for a in quo_coeffs]
+	# 			# println(quo)
+	# 			# println(sum(quo_coeffs .* quo_mons))
+	# 			quo[i] = sum(quo_coeffs .*  quo_mons)
+	# 		end
+	# 	end
+	# 	rem_mons = collect(monomials(rem))
+	# 	rem_coeffs = collect(coefficients(rem))
+	# 	size_rem_coeffs = size(rem_coeffs,1)
+	# 	if size_rem_coeffs > 0
+	# 		rem_coeffs = [(mod(BigInt(numerator(a)), p^prec)) * BigInt(invmod(BigInt(denominator(a)),p^prec)) for a in rem_coeffs]
+	# 		rem = sum(rem_coeffs .*  rem_mons)
+	# 	end
+	# end
+
+
+
+	# 	println(quo)
+	# 	quo = [(mod(BigInt(numerator(a)), p^prec)) * BigInt(invmod(BigInt(denominator(a)),p^prec)) for a in quo]
+	# 	rem = (mod(BigInt(numerator(rem)), p^prec)) * BigInt(invmod(BigInt(denominator(rem)),p^prec))
+	# end
 
 	qr_dict[monomial] = [quo,rem]
 end
@@ -435,11 +468,19 @@ function compute_R_S(v)
 			end
 
 		end
-		R_mu_dict[v] = mat_R_mu
-		R_const_dict[v] = mat_R_const
-		S_dict[v] = mat_S
 
+		# if modular_arithmetic
+		# 	# 
+		# 	R_mu_dict[v] = [(mod(BigInt(numerator(a)), p^prec)) * BigInt(invmod(BigInt(denominator(a)),p^prec)) for a in mat_R_mu]
+		# 	R_const_dict[v] = [(mod(BigInt(numerator(a)), p^prec)) * BigInt(invmod(BigInt(denominator(a)),p^prec)) for a in mat_R_const]
+		# 	S_dict[v] = [(mod(BigInt(numerator(a)), p^prec)) * BigInt(invmod(BigInt(denominator(a)),p^prec)) for a in mat_S]
+		# else
+			R_mu_dict[v] = mat_R_mu
+			R_const_dict[v] = mat_R_const
+			S_dict[v] = mat_S
+		# end
 	end
+
 	return [R_const_dict[v], R_mu_dict[v], S_dict[v]]
 end
 
@@ -647,16 +688,16 @@ for i = 1:len_B
 	    	# ans_mons = collect(monomials(h))
 	    	# ans_coeffs = collect(coefficients(h))
 
-	    	if zp == QQ
+	    	# if zp == QQ
 	    		# ans_coeffs //= denom
 	    		ans_coeffs = BigInt.(numerator.(ans_coeffs)) .* BigInt.([invmod(BigInt(denominator(a)),big(p)^prec) for a in ans_coeffs])
 	    		
-	    	else
+	    	# else
 	    		# ans_coeffs = BigInt.(ans_coeffs)
 	    		# ans_coeffs //= denom
-	    		ans_coeffs = [BigInt(numerator(a)) * BigInt(invmod(denominator(a),big(p)^prec)) for a in ans_coeffs]
+	    		# ans_coeffs = BigInt.(numerator.(ans_coeffs)) .* BigInt.([invmod(BigInt(denominator(a)),big(p)^prec) for a in ans_coeffs])
 	    		
-	    	end
+	    	# end
 
 	    	# ans_coeffs = [zp(a) for a in ans_coeffs]
 

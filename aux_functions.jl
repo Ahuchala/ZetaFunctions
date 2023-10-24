@@ -124,3 +124,9 @@ function reduce_polynomial(g)
 	return rem + reduce_polynomial(ans)
 
 end
+
+
+# warning: untested
+function change_ring_monomial(g,ringB)
+	return ringB(BigInt(collect(coefficients(g))[1]))*prod(gens(ringB)[1:n].^monomial_to_vector(g))
+end
