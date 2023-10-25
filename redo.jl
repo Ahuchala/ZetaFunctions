@@ -27,9 +27,9 @@ p = 7
 
 # prec = 4
 # prec = -1
-frob_prec = 2
+frob_prec = 5
 # prec = frob_prec+3
-prec = 3
+prec = 8
 
 
 # prec = n
@@ -392,33 +392,6 @@ for monomial in monomial_int
 	#  [[[3, 0, 0], 185], [[2, 1, 0], 173], [[1, 2, 0], 256], [[0, 3, 0], 98], [[2, 0, 1], 196], [[1, 1, 1], 325], [[0, 2, 1], 316], [[1, 0, 2], 171], [[0, 1, 2], 21], [[0, 0, 3], 55]]
 	#  [[[3, 0, 0], 136], [[2, 1, 0], 173], [[1, 2, 0], 32], [[0, 3, 0], 329], [[2, 0, 1], 339], [[1, 1, 1], 33], [[0, 2, 1], 103], [[0, 0, 3], 13]]
 
-	# if modular_arithmetic
-	# 	for i = 1 : n
-	# 		quo_mons = collect(monomials(quo[i]))
-	# 		quo_coeffs = collect(coefficients(quo[i]))
-	# 		size_quo_coeffs = size(quo_coeffs,1)
-	# 		if size_quo_coeffs > 0
-	# 			quo_coeffs = [(mod(BigInt(numerator(a)), p^prec)) * BigInt(invmod(BigInt(denominator(a)),p^prec)) for a in quo_coeffs]
-	# 			# println(quo)
-	# 			# println(sum(quo_coeffs .* quo_mons))
-	# 			quo[i] = sum(quo_coeffs .*  quo_mons)
-	# 		end
-	# 	end
-	# 	rem_mons = collect(monomials(rem))
-	# 	rem_coeffs = collect(coefficients(rem))
-	# 	size_rem_coeffs = size(rem_coeffs,1)
-	# 	if size_rem_coeffs > 0
-	# 		rem_coeffs = [(mod(BigInt(numerator(a)), p^prec)) * BigInt(invmod(BigInt(denominator(a)),p^prec)) for a in rem_coeffs]
-	# 		rem = sum(rem_coeffs .*  rem_mons)
-	# 	end
-	# end
-
-
-
-	# 	println(quo)
-	# 	quo = [(mod(BigInt(numerator(a)), p^prec)) * BigInt(invmod(BigInt(denominator(a)),p^prec)) for a in quo]
-	# 	rem = (mod(BigInt(numerator(rem)), p^prec)) * BigInt(invmod(BigInt(denominator(rem)),p^prec))
-	# end
 
 	qr_dict[monomial] = [quo,rem]
 end
@@ -499,12 +472,6 @@ function compute_R_S(v)
 
 		end
 
-		# if modular_arithmetic
-		# 	# 
-		# 	R_mu_dict[v] = [(mod(BigInt(numerator(a)), p^prec)) * BigInt(invmod(BigInt(denominator(a)),p^prec)) for a in mat_R_mu]
-		# 	R_const_dict[v] = [(mod(BigInt(numerator(a)), p^prec)) * BigInt(invmod(BigInt(denominator(a)),p^prec)) for a in mat_R_const]
-		# 	S_dict[v] = [(mod(BigInt(numerator(a)), p^prec)) * BigInt(invmod(BigInt(denominator(a)),p^prec)) for a in mat_S]
-		# else
 		R_dn_dict[v] = mat_R_dn
 		R_mu_dict[v] = mat_R_mu
 		R_const_dict[v] = mat_R_const
@@ -539,8 +506,7 @@ function reduce_uv(monomial)
 
 	u = monomial_to_vector(monomial)
 	g = transpose(to_Pn_basis(g))
-	# g = [R(0) for a = 1:size_Pn]
-	# g[1] = coeff
+
 	for v in P1
 
 		v_vec = monomial_to_vector(v)
@@ -554,15 +520,6 @@ function reduce_uv(monomial)
 				# could even just do like d--
 				d = degree(vector_to_monomial(u))
 
-				# m = 1
-				# if n == 3
-				# 	m = [evaluate(a,[0,0,0,u[1],u[2],u[3]]) for a in mat]
-				# elseif n == 4
-				# 	m = [evaluate(a,[0,0,0,0,u[1],u[2],u[3],u[4]]) for a in mat]
-				# else
-				# 	println("error: not implemented for n > 4")
-				# end
-				# m = R_mat
 				g = ((d+n-1) * mat_R_dn + mat_R_const + sum(u[i] * mat_R_mu[:,:,i] for i = 1:n))*g
 				# g = (mat_R_dn + mat_R_const + sum(u[i] * mat_R_mu[:,:,i] for i = 1:n))*g
 
