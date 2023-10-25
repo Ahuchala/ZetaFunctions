@@ -27,9 +27,9 @@ p = 7
 
 # prec = 4
 # prec = -1
-frob_prec = 3
+frob_prec = 2
 # prec = frob_prec+3
-prec = 7
+prec = 3
 
 
 # prec = n
@@ -63,20 +63,20 @@ R, (x, y, z) = polynomial_ring(zp, ["x", "y", "z"])
 
 # latest todo
 # zp = ZZ
-# R_ZZ, (x,y,z) = polynomial_ring(zp, ["x", "y", "z"])
+# R_ZZ, (x,y,z) = polynomial_ring(ZZ, ["x", "y", "z"])
 # pn_ideal = Ideal(R_ZZ,R_ZZ(p^prec))
 # R,(x, y, z) = QuotientRing(R_ZZ,pn_ideal)
 # zp = QQ
 
 
-weight = [1,3,1]
+# weight = [1,3,1]
 # f = y^2 - x^6 - x^3*z^3-z^6
-f = y^2 - (-2*x^6-x^5*z+3*x^4*z^2+x^3*z^3-2*x^2*z^4+x*z^5+3*z^6)
+# f = y^2 - (-2*x^6-x^5*z+3*x^4*z^2+x^3*z^3-2*x^2*z^4+x*z^5+3*z^6)
 
-# weight = [1,1,1]
+weight = [1,1,1]
 # f = x^5 + y^5 + z^5+3*x*y*z^3
 
-# f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
+f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
 # f = x^3 + y^3 + z^3
 # f = x*y*z + 2*x^2 * y + 3*x^2 * 4*z+ x*y^2 + 5*y^2 * z + 6*x^3 + 7*y^3 + 8*z^3
 
@@ -98,13 +98,17 @@ println(binomial(d*(n-1),n-1), ' ', binomial(d*(n-1)+n-1,n-1))
 # frob_prec = Int(ceil(log(2*binomial(k,(k+1)÷2)*p^((n/2)*((k+1)÷2)))/log(p)))
 println("Using arithmetic with precision p^",prec," and frobenius precision ", frob_prec)
 
-include("aux_functions.jl")
 
 
-df = [Rgens[i] * derivative(f,Rgens[i]) for i = 1:n]
+# df = [R(0); [Rgens[i] * derivative(f,Rgens[i]) for i = 1:n]]
+df = [f; [Rgens[i] * derivative(f,Rgens[i]) for i = 1:n]]
 I = Ideal(R,df)
 I_std = std(I)
 
+minimal_I = Ideal(R,[Rgens[i] * derivative(f,Rgens[i]) for i = 1:n])
+minimal_I_std=  std(minimal_I)
+
+include("aux_functions.jl")
 
 if n == 3
 	J, (x,y,z) = QuotientRing(R, I_std)
@@ -377,7 +381,7 @@ for monomial in monomial_int
 	quo = monomial - rem
 	# TODO: lift groebner??
 	quo = Singular.lift(I,Ideal(R,quo))[1][1] #Ideal, subideal
-	quo =  [[[a[2],a[3]] for a in quo if a[1] == i] for i = 1 : n]
+	quo =  [[[a[2],a[3]] for a in quo if a[1] == i] for i = 1 : n+1]
 	# todo: not vectorized
 	quo = [vector_to_polynomial(a) for a in quo]
 
@@ -422,7 +426,8 @@ end
 # end
 
 # keys are nu
-# out is assembled like R_const + sum(mu .* R_mu) + j*S
+# out is assembled like R_const + sum(mu .* R_mu) + j*S\
+R_dn_dict = Dict()
 R_mu_dict = Dict()
 R_const_dict = Dict()
 S_dict = Dict()
@@ -432,6 +437,8 @@ function compute_R_S(v)
 	if !haskey(R_mu_dict,[v]) 
 
 		mon_v = vector_to_monomial(v)
+		mat_R_dn = Array{typeof(zp(1))}(undef,size_Pn,size_Pn)
+		mat_R_dn .= ZERO
 		mat_R_const = Array{typeof(zp(1))}(undef,size_Pn,size_Pn)
 		mat_R_const .= ZERO
 		mat_R_mu = Array{typeof(zp(1))}(undef,size_Pn,size_Pn,n)
@@ -444,8 +451,8 @@ function compute_R_S(v)
 			vg = Pn[ind] * mon_v
 			pi_n = qr_dict[vg][1]
 
-			mat_R_const_poly = toric_derivative_vector(pi_n)
-			mat_S_poly = sum(v.* pi_n)
+			mat_R_const_poly = toric_derivative_vector(pi_n[2:n+1])
+			mat_S_poly = sum(v.* pi_n[2:n+1]) + pi_n[1]
 
 			if mat_R_const_poly != 0
 
@@ -455,15 +462,26 @@ function compute_R_S(v)
 					mon_ind = findall(xx->xx==mat_R_const_poly_mons[i],Pn)[1]
 					mat_R_const[mon_ind,ind] = mat_R_const_poly_coeffs[i]
 				end
+
+
 			end
 
-			for j = 1 : n
+			if pi_n[1] != 0
+				mat_R_dn_mons = collect(monomials(pi_n[1]))
+				mat_R_dn_coeffs = collect(coefficients(pi_n[1]))
+				for i = 1 : size(mat_R_dn_coeffs,1)
+					mon_ind = findall(xx->xx==mat_R_dn_mons[i],Pn)[1]
+					mat_R_dn[mon_ind,ind] = mat_R_dn_coeffs[i]
+				end
+			end
+
+			for j = 2 : n+1
 				if pi_n[j] != 0
 					mat_R_mu_poly_mons = collect(monomials(pi_n[j]))
 					mat_R_mu_poly_coeffs = collect(coefficients(pi_n[j]))
 					for i = 1 : size(mat_R_mu_poly_mons,1)
 						mon_ind = findall(xx->xx==mat_R_mu_poly_mons[i],Pn)[1]
-						mat_R_mu[mon_ind,ind,j] = mat_R_mu_poly_coeffs[i]
+						mat_R_mu[mon_ind,ind,j-1] = mat_R_mu_poly_coeffs[i]
 					end
 				end
 			end
@@ -487,13 +505,14 @@ function compute_R_S(v)
 		# 	R_const_dict[v] = [(mod(BigInt(numerator(a)), p^prec)) * BigInt(invmod(BigInt(denominator(a)),p^prec)) for a in mat_R_const]
 		# 	S_dict[v] = [(mod(BigInt(numerator(a)), p^prec)) * BigInt(invmod(BigInt(denominator(a)),p^prec)) for a in mat_S]
 		# else
-			R_mu_dict[v] = mat_R_mu
-			R_const_dict[v] = mat_R_const
-			S_dict[v] = mat_S
+		R_dn_dict[v] = mat_R_dn
+		R_mu_dict[v] = mat_R_mu
+		R_const_dict[v] = mat_R_const
+		S_dict[v] = mat_S
 		# end
 	end
 
-	return [R_const_dict[v], R_mu_dict[v], S_dict[v]]
+	return [R_dn_dict[v], R_const_dict[v], R_mu_dict[v], S_dict[v]]
 end
 
 	
@@ -526,11 +545,14 @@ function reduce_uv(monomial)
 
 		v_vec = monomial_to_vector(v)
 		if all(u.>=v_vec)
-			mat_R_const, mat_R_mu ,mat_S = compute_R_S(v_vec)
+			mat_R_dn, mat_R_const, mat_R_mu ,mat_S = compute_R_S(v_vec)
 
 			while all(u.>=v_vec) #&& degree(vector_to_monomial(u))> fdegree
 
 				u .-= v_vec
+				# todo: fix
+				# could even just do like d--
+				d = degree(vector_to_monomial(u))
 
 				# m = 1
 				# if n == 3
@@ -541,7 +563,9 @@ function reduce_uv(monomial)
 				# 	println("error: not implemented for n > 4")
 				# end
 				# m = R_mat
-				g = (mat_R_const + sum(u[i] * mat_R_mu[:,:,i] for i = 1:n))*g
+				g = ((d+n-1) * mat_R_dn + mat_R_const + sum(u[i] * mat_R_mu[:,:,i] for i = 1:n))*g
+				# g = (mat_R_dn + mat_R_const + sum(u[i] * mat_R_mu[:,:,i] for i = 1:n))*g
+
 				# g = transpose(m)*g
 			end
 		end
@@ -651,7 +675,7 @@ end
 
 
 
-frob_matrix = [[BigInt(0) for i = 1:len_B] for j = 1:len_B]
+frob_matrix = [[BigInt(0)//1 for i = 1:len_B] for j = 1:len_B]
 
 
 for i = 1:len_B
@@ -702,7 +726,7 @@ for i = 1:len_B
 
 	    	# if zp == QQ
 	    		# ans_coeffs //= denom
-	    		ans_coeffs = BigInt.(numerator.(ans_coeffs)) .* BigInt.([invmod(BigInt(denominator(a)),big(p)^prec) for a in ans_coeffs])
+	    		# ans_coeffs = BigInt.(numerator.(ans_coeffs)) .* BigInt.([invmod(BigInt(denominator(a)),big(p)^prec) for a in ans_coeffs])
 	    		
 	    	# else
 	    		# ans_coeffs = BigInt.(ans_coeffs)
@@ -726,14 +750,16 @@ for i = 1:len_B
     end
 end
         
+
+frob_matrix_zp = [[big(0) for i = 1:len_B] for j = 1:len_B]
 for i = 1:len_B
 	for j = 1:len_B
 		# if zp == QQ
-			frob_matrix[i][j] =(mod(BigInt(numerator(frob_matrix[i][j])), p^prec)) * BigInt(invmod(BigInt(denominator(frob_matrix[i][j])),p^prec))
+			frob_matrix_zp[i][j] = mod(BigInt(numerator(frob_matrix[i][j])), p^prec) * (invmod(BigInt(denominator(frob_matrix[i][j])),p^prec))
 		# else
 			# frob_matrix[i][j] =(mod(BigInt(numerator(frob_matrix[i][j])), p^prec)) * BigInt(invmod(BigInt(denominator(frob_matrix[i][j])),p^prec))
 		# end
 	end
 end
 
-println(frob_matrix)
+println(frob_matrix_zp)
