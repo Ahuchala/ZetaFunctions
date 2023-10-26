@@ -7,8 +7,8 @@ lib = DefaultLibrary{Int64}(GLPK.Optimizer)
 DEBUG = true
 
 
-# p = 389
-p = 7
+p = 11
+# p = 7
 # n = 4
 # d = 4
 # len_B = (-1)^(n)*Integer(((1-d)^(n)-1)/d+1)
@@ -27,9 +27,9 @@ p = 7
 
 # prec = 4
 # prec = -1
-frob_prec = 5
+frob_prec = 2
 # prec = frob_prec+3
-prec = 8
+prec = 3
 
 
 # prec = n
@@ -39,16 +39,10 @@ prec = 8
 # zp = residue_ring(ZZ, p^prec)
 
 # residue_ring appears bugged, manually truncating precision with
-modular_arithmetic = false
+modular_arithmetic = true
 zp = QQ
 
 
-if zp != QQ
-	if big(p)^prec > -1 + 2^63
-		zp = residue_ring(ZZ, big(p)^prec)
-		println("warning: using big ints for large modulus ",big(p)^prec)
-	end
-end
 
 # R, (w, x, y, z) = polynomial_ring(zp, ["w", "x", "y", "z"])
 # weight = [1,1,1,1]
@@ -58,15 +52,20 @@ end
 
 # TODO: check smoothness, nondegeneracy
 
-R, (x, y, z) = polynomial_ring(zp, ["x", "y", "z"])
-
-
 # latest todo
-# zp = ZZ
-# R_ZZ, (x,y,z) = polynomial_ring(ZZ, ["x", "y", "z"])
-# pn_ideal = Ideal(R_ZZ,R_ZZ(p^prec))
-# R,(x, y, z) = QuotientRing(R_ZZ,pn_ideal)
-# zp = QQ
+if modular_arithmetic
+	# zp = ZZ
+	# R_ZZ, (x,y,z) = polynomial_ring(ZZ, ["x", "y", "z"])
+	# pn_ideal = Ideal(R_ZZ,R_ZZ(p^prec))
+	# R,(x, y, z) = QuotientRing(R_ZZ,pn_ideal)
+
+	zp = residue_ring(ZZ,p^prec)
+	if big(p)^prec > -1 + 2^63
+		zp = residue_ring(ZZ, big(p)^prec)
+		println("warning: using big ints for large modulus ",big(p)^prec)
+	end
+end
+R, (x, y, z) = polynomial_ring(zp, ["x", "y", "z"])
 
 
 # weight = [1,3,1]
@@ -318,7 +317,7 @@ function frobenius(g)
 		if DEBUG
 			@assert binomial(-d,j) * binomial(d+frob_prec-1,d+j) == big(binomial(-d,j)) * big(binomial(d+frob_prec-1,d+j))
 		end
-		summer +=  binomial(-d,j) * binomial(d+frob_prec-1,d+j) * sigma_g*sigma(fj)
+		summer +=  zp(binomial(-d,j)) * zp(binomial(d+frob_prec-1,d+j)) * sigma_g*sigma(fj)
 		fj *= f
 	end
 	return summer 
@@ -707,6 +706,7 @@ for i = 1:len_B
     end
 end
         
+println(frob_matrix)
 
 frob_matrix_zp = [[big(0) for i = 1:len_B] for j = 1:len_B]
 for i = 1:len_B
