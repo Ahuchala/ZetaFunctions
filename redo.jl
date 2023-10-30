@@ -261,9 +261,11 @@ function compute_primitive_cohomology()
 		for a in integer_points
 			b = affine_vector_to_J_monomial(Int.(a),scale)
 			if Singular.reduce(b,primitive_ideal_std) != 0
-				println(b)
 			# if !contains(primitive_ideal,Ideal(J,b))
-				push!(cohomology_basis_pure,change_ring(b,R))
+				for monomial in collect(monomials(b))
+					println(monomial)
+					push!(cohomology_basis_pure,change_ring(monomial,R))
+				end
 				# want to find (P_int + If)/(If)
 				primitive_ideal = Ideal(J,cohomology_basis_pure)
 				primitive_ideal_std = std(primitive_ideal)
@@ -280,7 +282,7 @@ end
 
 # this is the notation of the paper
 B = compute_primitive_cohomology()
-B = [x,y,z,x*z^4, y*z^4, z^5]
+# B = [x,y,z,x*z^4, y*z^4, z^5]
 B = [change_ring(a,R) * prod(Rgens) for a in B]
 
 # this makes it agree with the basis used by Singular lifts

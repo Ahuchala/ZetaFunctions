@@ -54,10 +54,7 @@ zp = QQ
 
 # latest todo
 if modular_arithmetic
-	# zp = ZZ
-	# R_ZZ, (x,y,z) = polynomial_ring(ZZ, ["x", "y", "z"])
-	# pn_ideal = Ideal(R_ZZ,R_ZZ(p^prec))
-	# R,(x, y, z) = QuotientRing(R_ZZ,pn_ideal)
+
 
 	zp = residue_ring(ZZ,p^prec)
 	if big(p)^prec > -1 + 2^63
@@ -87,7 +84,7 @@ n = size(Rgens)[1]
 
 f_coeff = collect(coefficients(f))
 f_mons = collect(monomials(f))
-# f = sum([(Integer(BigInt(f_coeff[i]))%p)*f_mons[i] for i in 1:size(f_coeff,1)])
+
 
 d = total_degree(f)
 fdegree = d
@@ -103,6 +100,7 @@ println("Using arithmetic with precision p^",prec," and frobenius precision ", f
 df = [f; [Rgens[i] * derivative(f,Rgens[i]) for i = 1:n]]
 I = Ideal(R,df)
 I_std = std(I)
+
 
 minimal_I = Ideal(R,[Rgens[i] * derivative(f,Rgens[i]) for i = 1:n])
 minimal_I_std=  std(minimal_I)
@@ -251,19 +249,28 @@ function compute_primitive_cohomology()
 
 		# only keep the points in the interior
 		integer_points = filter(a -> all([ininterior(a,h) for h in halfspaces(hrep(P))]), integer_points)
+		integer_points = [affine_vector_to_J_monomial(Int.(a),scale) for a in integer_points]
+		integer_points = [divide_by_x1xn(a) for a in integer_points]
+
 
 		# need to check if each point added is linearly independent of the current basis
 		primitive_ideal = Ideal(J) #TODO: groebner?
 		primitive_ideal_std = std(primitive_ideal)
 		cohomology_basis_pure = typeof(Rgens[1])[]
-		for a in integer_points
-			b = affine_vector_to_J_monomial(Int.(a),scale)
-			if Singular.reduce(b,primitive_ideal_std) != 0
+		for b in integer_points
+			b = Singular.reduce(change_ring(b,R),I_std)
+			if b != 0
+				b = change_ring(b,J)
 			# if !contains(primitive_ideal,Ideal(J,b))
-				push!(cohomology_basis_pure,change_ring(b,R))
+				for monomial in collect(monomials(b))
+					if Singular.reduce(monomial,primitive_ideal_std) != 0
+						push!(cohomology_basis_pure,change_ring(monomial,J ))
+						primitive_ideal = Ideal(J,cohomology_basis_pure)
+						primitive_ideal_std = std(primitive_ideal)
+					end
+				end
 				# want to find (P_int + If)/(If)
-				primitive_ideal = Ideal(J,cohomology_basis_pure)
-				primitive_ideal_std = std(primitive_ideal)
+				
 			end
 		end
 		cohomology_basis = [cohomology_basis; cohomology_basis_pure]
@@ -279,8 +286,10 @@ end
 B = compute_primitive_cohomology()
 
 # this makes it agree with the basis used by Singular lifts
-B = Set(collect(flatten([collect(monomials(Singular.reduce(blah,I_std))) for blah in B])))
-B = [blah for blah in B]
+# B = Set(collect(flatten([collect(monomials(Singular.reduce(blah,I_std))) for blah in B])))
+# B = [blah for blah in B]
+# B =[x,y,z,x*z^4, y*z^4, z^5]
+# B = [change_ring(a,R) for a in B]
 
 
 println(B)
@@ -330,9 +339,10 @@ function divide_by_x1xn(g)
 end
 
 function frobenius_on_cohom(i)
+	return divide_by_x1xn(frobenius(B[i] * prod(Rgens)))*p
 	# return frobenius(B[i]) * p
 	# return divide_by_x1xn(frobenius(B[i]) * p^(n-2))
-	return frobenius(B[i]) * p^(n-2)
+	# return frobenius(B[i]) * p^(n-2)
 	# return frobenius(divide_by_x1xn(B[i]))* prod(Rgens)*p
 	# this is what I think it should be...
 	# return divide_by_x1xn(frobenius(B[i])) * p
