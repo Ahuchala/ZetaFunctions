@@ -110,25 +110,14 @@ function reduce_polynomial(g)
 		return g
 	end
 	
-	rem = Singular.reduce(g,minimal_I_std)
-	quo,r = Singular.lift(minimal_I,Ideal(R,g-rem))
+	rem = Singular.reduce(g,I_std)
+	quo,r = Singular.lift(I,Ideal(R,g-rem))
 
 	quo = quo[1]
-	# 	quo = [quo[j] + quo[1]//degree(g) for j = 2:n+1]
-
-	# quo = quo[1]
-	# # s = size(gens(ideal_J),1)
-	# quo =  [[[a[2],a[3]] for a in quo if a[1] == j] for j = 1 : n]
-
+	s = n
 	# s = size(gens(ideal_J),1)
-
-	quo =  [[[a[2],a[3]] for a in quo if a[1] == j] for j = 1 : n]
-
-# # this feels buggy
-# 	quo_f = vector_to_polynomial(quo[1]) * invmod(sum(monomial_to_vector(g)),p^prec)
-
-	quo = [vector_to_polynomial(a) for a in quo[1:n]]
-
+	quo =  [[[a[2],a[3]] for a in quo if a[1] == j] for j = 1 : s]
+	quo = [vector_to_polynomial(a) for a in quo]
 
 	ans = toric_derivative_vector(quo)
 	# println(g)

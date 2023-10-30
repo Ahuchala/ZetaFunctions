@@ -29,7 +29,7 @@ p = 11
 # prec = -1
 frob_prec = 2
 # prec = frob_prec+3
-prec = 10
+prec = 3
 
 
 # prec = n
@@ -234,8 +234,6 @@ function polynomial_degree(g)
 	return maximum([degree(mon) for mon in monomials(g)])
 end
 
-
-# todo: fix
 function compute_primitive_cohomology()
 	cohomology_basis = typeof(Rgens[1])[]
 	for scale = 1:n
@@ -257,11 +255,10 @@ function compute_primitive_cohomology()
 		# need to check if each point added is linearly independent of the current basis
 		primitive_ideal = Ideal(J) #TODO: groebner?
 		primitive_ideal_std = std(primitive_ideal)
-		cohomology_basis_pure = typeof(gens(J)[1])[]
+		cohomology_basis_pure = typeof(Rgens[1])[]
 		for a in integer_points
 			b = affine_vector_to_J_monomial(Int.(a),scale)
 			if Singular.reduce(b,primitive_ideal_std) != 0
-				println(b)
 			# if !contains(primitive_ideal,Ideal(J,b))
 				push!(cohomology_basis_pure,change_ring(b,R))
 				# want to find (P_int + If)/(If)
@@ -280,12 +277,10 @@ end
 
 # this is the notation of the paper
 B = compute_primitive_cohomology()
-B = [x,y,z,x*z^4, y*z^4, z^5]
-B = [change_ring(a,R) * prod(Rgens) for a in B]
 
 # this makes it agree with the basis used by Singular lifts
-# B = Set(collect(flatten([collect(monomials(Singular.reduce(blah,I_std))) for blah in B])))
-# B = [blah for blah in B]
+B = Set(collect(flatten([collect(monomials(Singular.reduce(blah,I_std))) for blah in B])))
+B = [blah for blah in B]
 
 
 println(B)
@@ -343,7 +338,6 @@ function frobenius_on_cohom(i)
 	# return divide_by_x1xn(frobenius(B[i])) * p
 end
 
-# todo: think if this is really the full set of directions I should compute R_dict for
 
 vertex_set = scale_by_d(1)
 P = polyhedron(vrep(vertex_set),lib)
@@ -361,7 +355,7 @@ P = polyhedron(vrep(vertex_set),lib)
 tuples = Base.Iterators.product([0:(maximum(maximum.(vertex_set))) for i in 1:n-1]...)
 net = polyhedron(vrep(vec([[i for i in aa] for aa in tuples])),lib)
 Net = [Integer.(a) for a in points(net)]
-Net = filter(a -> all([ininterior(a,h) for h in halfspaces(hrep(P))]), Net)
+Net = filter(a -> all([in(a,h) for h in halfspaces(hrep(P))]), Net)
 # integer_points = Net
 monomial_int = [affine_vector_to_monomial(pt,n-1) for pt in Net]
 Pn = monomial_int
@@ -376,10 +370,9 @@ P = polyhedron(vrep(vertex_set),lib)
 tuples = Base.Iterators.product([0:(maximum(maximum.(vertex_set))) for i in 1:n-1]...)
 net = polyhedron(vrep(vec([[i for i in aa] for aa in tuples])),lib)
 Net = [Integer.(a) for a in points(net)]
-Net = filter(a -> all([ininterior(a,h) for h in halfspaces(hrep(P))]), Net)
+Net = filter(a -> all([in(a,h) for h in halfspaces(hrep(P))]), Net)
 monomial_int = [affine_vector_to_monomial(pt,scale) for pt in Net]
 for monomial in monomial_int
-	monomial = divide_by_x1xn(monomial)
 
 	# this appears to have bugs in positive characteristic
 
@@ -389,7 +382,7 @@ for monomial in monomial_int
 	quo = Singular.lift(I,Ideal(R,quo))[1][1] #Ideal, subideal
 	quo =  [[[a[2],a[3]] for a in quo if a[1] == i] for i = 1 : n+1]
 	# todo: not vectorized
-	quo = [vector_to_polynomial(a)*prod(Rgens) for a in quo]
+	quo = [vector_to_polynomial(a) for a in quo]
 
 	# now q looks like 
 
@@ -399,7 +392,7 @@ for monomial in monomial_int
 	#  [[[3, 0, 0], 136], [[2, 1, 0], 173], [[1, 2, 0], 32], [[0, 3, 0], 329], [[2, 0, 1], 339], [[1, 1, 1], 33], [[0, 2, 1], 103], [[0, 0, 3], 13]]
 
 
-	qr_dict[monomial*prod(Rgens)] = [quo,rem*prod(Rgens)]
+	qr_dict[monomial] = [quo,rem]
 end
 
 # end
@@ -437,7 +430,6 @@ function compute_R_S(v)
 
 				mat_R_const_poly_mons = collect(monomials(mat_R_const_poly))
 				mat_R_const_poly_coeffs = collect(coefficients(mat_R_const_poly))
-
 				for i = 1 : size(mat_R_const_poly_coeffs,1)
 					mon_ind = findall(xx->xx==mat_R_const_poly_mons[i],Pn)[1]
 					mat_R_const[mon_ind,ind] = mat_R_const_poly_coeffs[i]
@@ -600,7 +592,6 @@ function compute_reduction_matrix()
 
 			# ans = sum([change_ring(quo[j],J)*gens(ideal)[j] for j = 1 : s])
 		ans = reduce_polynomial(g)
-		println(ans)
 
 		ans_coeffs = collect(coefficients(ans))
 		ans_mons = collect(monomials(ans))
@@ -626,7 +617,7 @@ function to_Pn_basis(h)
 
 	ans_coeffs = collect(coefficients(h))
 	ans_mons = collect(monomials(h))
-	# println(h)
+
 	for j = 1:size(ans_coeffs,1)
 		mon_index = findall(xx->xx==ans_mons[j],Pn)[1]
 		ans[mon_index] = ans_coeffs[j]
@@ -639,9 +630,8 @@ function from_B_basis(v)
 end
 
 
-#  frob_matrix = [[BigInt(0)//1 for i = 1:len_B] for j = 1:len_B]
 
-frob_matrix = [[zp(0) for i = 1:len_B] for j = 1:len_B]
+frob_matrix = [[BigInt(0)//1 for i = 1:len_B] for j = 1:len_B]
 
 
 for i = 1:len_B
@@ -662,25 +652,16 @@ for i = 1:len_B
 
     	h = from_B_basis(to_Pn_basis(h)*reduction_matrix)
     	if h != 0
-    		denom = zp(factorial(big(degree(mons[k]))-1))
-
+    		denom = factorial(big(degree(mons[k]))-1)
 
 	        ans_mons = collect(monomials(h))
 	        ans_coeffs = 1
-	        if !modular_arithmetic
+	        if zp == QQ
 	        	ans_coeffs = BigInt.(numerator.(collect(coefficients(h)))).//BigInt.(denominator.(collect(coefficients(h))))
 	        else
-	    		ans_coeffs = collect(coefficients(h))
+	    		ans_coeffs = BigInt.(collect(coefficients(h))).//1
 	    	end
-	    	# println(ans_coeffs)
-	    	ans_coeffs = [ ans_coeffs[j] *zp(factorial(big(max(0,degree(ans_mons[j]))-1))) for j=1:size(ans_coeffs,1)]
-	    	
-
-	    	ans_coeffs = numerator.(ans_coeffs.//denom)
-
-    		if DEBUG
-    			@assert(all(denominator.(ans_coeffs.//denom) .== 1))
-    		end
+	    	ans_coeffs = [factorial(max(0,degree(ans_mons[j]))-1) //denom * ans_coeffs[j] for j=1:size(ans_coeffs,1)]
 
 
 	    	if DEBUG
@@ -718,7 +699,6 @@ for i = 1:len_B
 	    		if isempty(mon_index) #!?
 	    			println("error: ", ans_mons[j])
 	    		else
-
 	    			frob_matrix[i][mon_index[1]] = frob_matrix[i][mon_index[1]]+ans_coeffs[j]
 	    		end
 	    	end
@@ -728,15 +708,15 @@ end
         
 println(frob_matrix)
 
-# frob_matrix_zp = [[big(0) for i = 1:len_B] for j = 1:len_B]
-# for i = 1:len_B
-# 	for j = 1:len_B
-# 		# if zp == QQ
-# 			frob_matrix_zp[i][j] = mod(BigInt(numerator(frob_matrix[i][j])), p^prec) * (invmod(BigInt(denominator(frob_matrix[i][j])),p^prec))
-# 		# else
-# 			# frob_matrix[i][j] =(mod(BigInt(numerator(frob_matrix[i][j])), p^prec)) * BigInt(invmod(BigInt(denominator(frob_matrix[i][j])),p^prec))
-# 		# end
-# 	end
-# end
+frob_matrix_zp = [[big(0) for i = 1:len_B] for j = 1:len_B]
+for i = 1:len_B
+	for j = 1:len_B
+		# if zp == QQ
+			frob_matrix_zp[i][j] = mod(BigInt(numerator(frob_matrix[i][j])), p^prec) * (invmod(BigInt(denominator(frob_matrix[i][j])),p^prec))
+		# else
+			# frob_matrix[i][j] =(mod(BigInt(numerator(frob_matrix[i][j])), p^prec)) * BigInt(invmod(BigInt(denominator(frob_matrix[i][j])),p^prec))
+		# end
+	end
+end
 
-# println(frob_matrix_zp)
+println(frob_matrix_zp)
