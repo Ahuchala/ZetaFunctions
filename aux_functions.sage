@@ -1,5 +1,14 @@
 print('hi')
 
-# R.<x,y,z> = QQ[]
-# def monomial_to_vector(m):
-#     return list(R(m).exponents()[0])
+fdeg = f.degree()
+prod_rgens = prod(Rgens)
+def degree(g):
+
+	gdeg = sum([weights[i] * monomial_to_vector(g.monomials()[0])[i] for i in range(n)]) // fdeg
+	if DEBUG:
+		assert(all([sum([weights[i]*monomial_to_vector(a)[i] for i in range(n)])==gdeg*fdeg for a in g.monomials()]))
+	return gdeg
+
+# return the degree of g * xyz, etc
+def affine_degree(g):
+	return degree(prod_rgens*g)

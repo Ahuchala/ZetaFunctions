@@ -1,10 +1,11 @@
 from sympy.utilities.iterables import multiset_permutations
 
-
+DEBUG = True
 use_macaulay = False
 
 
-p = 7
+
+p = 11
 
 prec =3
 
@@ -15,23 +16,18 @@ R.<x,y,z> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4> = QQ[]
 
 
+weights = [1,1,1]
 
 Rgens = R.gens()
 n = len(Rgens) #number of variables
 
 
 
-# f = x^3 + y^3 + z^3 - x*y*z
-# f = x^4 + y^4 + z^4
-
 # f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
 f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
 
 # f = (2)*x^3+3*x^2*y+(4)*x*y^2+(5)*y^3+(5)*x^2*z+x*y*z+(7)*y^2*z+(5)*x*z^2+(7)*y*z^2+(1)*z^3
-# f = x^6 + y^6 + z^6 - x^4*y*z
-# f = x^9 + y^9 + z^9
-# f = w^4 + x^4 + y^4  + z^4
-# f = x^2 + x*y + y^2 + z^2
+
 # f = -w^4-w^3*x-w^2*x^2-x^4-w^3*y-w^2*x*y-w*x^2*y+x^3*y+w^2*y^2+w*x*y^2+x^2*y^2-w*y^3+y^4+w^3*z-w^2*x*z-x^3*z-w^2*y*z+w*x*y*z-w*y^2*z+x*y^2*z-w^2*z^2-x^2*z^2-w*y*z^2+x*y*z^2-y^2*z^2+y*z^3+z^4
 # f= 2*x_0^3+2*x_0*x_1^2+x_1^3+2*x_0^2*x_2-x_0*x_1*x_2+2*x_1^2*x_2+x_0*x_2^2+2*x_1*x_2^2+x_2^3-x_0^2*x_3-x_0*x_1*x_3-x_0*x_2*x_3+x_1*x_2*x_3+2*x_2^2*x_3+x_0*x_3^2-x_1*x_3^2-x_2*x_3^2+2*x_0^2*x_4+2*x_0*x_1*x_4-x_1^2*x_4-2*x_0*x_2*x_4-x_1*x_2*x_4+2*x_2^2*x_4+x_0*x_4^2-x_1*x_4^2-2*x_2*x_4^2
 # f = w^4+2*w*x^3-2*x^4-x^3*y-x^2*y^2-y^4+w^3*z-x^3*z-2*w^2*y*z+2*w*x*y*z-x^2*y*z-w*y^2*z+2*x*y^2*z-2*y^3*z-w^2*z^2-2*w*x*z^2+x^2*z^2-2*w*y*z^2+x*y*z^2+y^2*z^2+2*w*z^3+2*x*z^3-2*y*z^3-2*z^4
@@ -41,6 +37,7 @@ J = R.quotient(I)
 xI = R.ideal([_*f.derivative(_) for _ in R.gens()])# + [f])
 xJ = R.quotient(xI)
 
+load("aux_functions.sage")
 d = f.degree()
 fdegree = d
 
@@ -177,8 +174,9 @@ def lift_poly(g):
 
 def Ruv(u,v,g):
     gi = lift_poly(vector_to_monomial(v)*g)
-    deg_g = (n-1)*fdegree-(n-1)
-    m = (sum(u) +deg_g+ n) // fdegree
+    # deg_g = (n-1)*fdegree-(n-1)
+    m = affine_degree(vector_to_monomial(u)*g)
+    # m = (sum(u) +deg_g+ n) // fdegree
 
 #     m = (sum(u) + sum(v) - g.degree() + n-1) // fdegree - 1
 #     print(gi)
@@ -270,7 +268,8 @@ for i in range(len(B)):
                     q = J(monomial).lift()
                     r = monomial - q
                     l = r.lift(I)
-                    m = (monomial.degree() +n)// f.degree()
+                    m = affine_degree(monomial)
+                    # m = (monomial.degree() +n)// f.degree()
 #                     print(monomial,m)
                     temp = sum([l[i].derivative(Rgens[i]) for i in range(n)])/(m-1) #m-1? m+1? coherent for m+1?
                     reduction_dict[monomial] = temp + q
