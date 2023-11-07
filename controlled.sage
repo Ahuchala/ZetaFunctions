@@ -5,7 +5,7 @@ use_macaulay = True
 
 n = 3 #number of variables
 p = 7
-prec =4
+prec =2
 
 
 R.<x,y,z> = QQ[]
