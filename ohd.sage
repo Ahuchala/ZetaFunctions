@@ -17,8 +17,8 @@ R.<x,y,z> = QQ[]
 
 
 # weights = [1,1,1,1]
-weights = [1,1,1]
-# weights = [1,3,1]
+# weights = [1,1,1]
+weights = [1,3,1]
 
 Rgens = R.gens()
 n = len(Rgens) #number of variables
@@ -26,11 +26,11 @@ n = len(Rgens) #number of variables
 
 
 # f = x^3 - y^3 - z^3 - x*y*z
-f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
+# f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
 # f = x^5 + y^5 + z^5 - x*y*z^3
 # f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
 # f = y^2 - x^6 - z^6-x^3*z^3
-# f = y^2 -(-2*x^6-x^5*z+3*x^4*z^2+x^3*z^3-2*x^2*z^4+x*z^5+3*z^6)
+f = y^2 -(-2*x^6-x^5*z+3*x^4*z^2+x^3*z^3-2*x^2*z^4+x*z^5+3*z^6)
 # f = (2)*x^3+3*x^2*y+(4)*x*y^2+(5)*y^3+(5)*x^2*z+x*y*z+(7)*y^2*z+(5)*x*z^2+(7)*y*z^2+(1)*z^3
 
 # f = w^3 + x^3 +y^3 - z^3 - w*x*z+2*y*z^2
@@ -291,16 +291,19 @@ def Ruv(u,v,g):
 #     m = (sum(u) + sum(v) - g.degree() + n-1) // fdegree - 1
 #     print(gi)
     h = sum([(u[i] +1)*gi[i] + Rgens[i] * (gi[i]).derivative(Rgens[i]) for i in range(n)])
-    v = n * [0]
-    for i in range(n):
-        while u[i] > 0:
-            u[i] = u[i] - 1
-            v[i] = v[i] + 1
-            # print(v)
-            if vector_to_monomial(v) in P1:
+    for v in P1_pts:
+        if all([u[i]>=v[i] for i in range(n)]):
+            return ([u[i]-v[i] for i in range(n)],v,h/m)
+    # v = n * [0]
+    # for i in range(n):
+    #     while u[i] > 0:
+    #         u[i] = u[i] - 1
+    #         v[i] = v[i] + 1
+    #         # print(v)
+    #         if vector_to_monomial(v) in P1:
             # if degree_vector(v)==1:
             # if sum(v) == fdegree:
-                return (u,v,h/m)
+                # return (u,v,h/m)
 
 # this is hacky but only done once per basis element
 def to_uvg(h):
@@ -382,7 +385,7 @@ for i in range(len(B)):
         # while sum(u) > fdegree:
             # print(u,v,g)
             u,v,g = Ruv(u,v,g)
-            print(u,v,g)
+            # print(u,v,g)
         htemp += vector_to_monomial(u) * vector_to_monomial(v) * g
     h = htemp
     
