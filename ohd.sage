@@ -5,11 +5,13 @@ use_macaulay = False
 
 
 
-p = 13
+p = 11
 
-prec = 3
+prec = 4
 
 # K = Qp(p,8)
+if DEBUG:
+    assert(is_prime_power(p))
 
 R.<x,y,z> = QQ[]
 # R.<w,x,y,z> = QQ[]
@@ -336,7 +338,7 @@ def to_uvg(h):
 
         u = n * [0]
         v = n * [0]
-        print(c,etuple)
+        # print(c,etuple)
         g = 0
         for g_vec in Pn_minus_1_pts:
             if all([vector[i] >= g_vec[i] for i in range(n)]):
@@ -432,18 +434,25 @@ for i in range(len(B)):
             summer += term
     
     for j in range(len(B)):
-        frob_matrix[i][j] = summer.monomial_coefficient(R(B[j])) % p^prec
+        frob_matrix[i][j] = summer.monomial_coefficient(R(B[j])) #% p^prec
         
     print(B[i],summer)
 
+if all([all([a.ord(p)>=0 for a in b]) for b in frob_matrix]):
+    frob_matrix = [[a % p^ prec for a in b] for b in frob_matrix]
+    print(frob_matrix)
+else:
+    print("Warning: non-invertible elements encountered")
 frob_matrix = matrix(frob_matrix)
-print(frob_matrix)
-print(frob_matrix.characteristic_polynomial() %p^(prec))
+
+# print(frob_matrix.characteristic_polynomial() %p^(prec))
 
 poly = R(frob_matrix.characteristic_polynomial())
 print(poly)
+
+# todo: mod these based on weil conjectures
 poly = sum([(poly.monomial_coefficient(mono) % p^(prec) )* mono if (poly.monomial_coefficient(mono)% p^prec) < (p^prec)//2 else (-p^(prec)+poly.monomial_coefficient(mono)% p^prec)*mono for mono in poly.monomials()])
 print(poly)
 
-for r in range(1,len(B)+1):
-    print(sum([p^(_*r) for _ in range(3)]) + (-1)^n * (frob_matrix^r).trace())
+# for r in range(1,len(B)+1):
+    # print(sum([p^(_*r) for _ in range(3)]) + (-1)^n * (frob_matrix^r).trace())
