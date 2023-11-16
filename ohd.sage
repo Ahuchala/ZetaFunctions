@@ -5,7 +5,7 @@ use_macaulay = False
 
 
 
-p = 11
+p = 13
 
 prec = 3
 
@@ -104,7 +104,8 @@ Pd = [a for a in Pd.integral_points()]
 for mon in Pd:
     mon = prod([Rgens[i]^mon[i] for i in range(n-1)])*Rgens[n-1]^((l*fdeg - sum([weights[i]*mon[i] for i in range(n-1)]))//weights[n-1])//(prod(Rgens))
     Pn_minus_1.add(mon)
-
+Pn_minus_1.remove(0)
+Pn_minus_1_pts = [monomial_to_vector(a) for a in Pn_minus_1]
 
 # g_vec_check_ideal = R.ideal(list(Pn_minus_1)) #* I
 
@@ -294,6 +295,7 @@ def Ruv(u,v,g):
     for v in P1_pts:
         if all([u[i]>=v[i] for i in range(n)]):
             return ([u[i]-v[i] for i in range(n)],v,h/m)
+    print("error: R(u,v,g) failed for",u,v,g)
     # v = n * [0]
     # for i in range(n):
     #     while u[i] > 0:
@@ -334,37 +336,49 @@ def to_uvg(h):
 
         u = n * [0]
         v = n * [0]
-
-        for i in range(n):
-            while vector[i] > 0:
-                vector[i] = vector[i] -1
-                v[i] = v[i] + 1
-                # if v[:-1] in P1:
-                if v in P1_pts:
-                # if degree_vector(v) == 1:
-                # if sum(v) == fdegree:
-                    u = vector
-                    vector = n * [0]
-
-        g_vec = n * [0]
-        vector = u
-        for i in range(n):
-            while vector[i] > 0:
-                vector[i] = vector[i] - 1
-                g_vec[i] = g_vec[i] + 1
-                # print(g_vec)
-                # if degree(vector_to_monomial(g_vec)) == n-1:
-                # if affine_degree(vector_to_monomial(g_vec)) == n-1:
-                # if prod_rgens * vector_to_monomial(g_vec)
-                # if sum(g_vec) == (n-1) * fdegree - sum(weights)+1:
-
-                if vector_to_monomial(g_vec) in Pn_minus_1:
-                # if vector_to_monomial(g_vec) in g_vec_check_ideal:
-                    print(g_vec)
-                    u = vector
-                    vector = n * [0]
-        g = c * vector_to_monomial(g_vec)
+        print(c,etuple)
+        g = 0
+        for g_vec in Pn_minus_1_pts:
+            if all([vector[i] >= g_vec[i] for i in range(n)]):
+                g = g_vec
+        vector = [vector[i] - g[i] for i in range(n)]
+        for v_vec in P1_pts:
+            if all([vector[i] >= v_vec[i] for i in range(n)]):
+                v = v_vec
+        vector = [vector[i] - v[i] for i in range(n)]
+        u = vector
+        g = c * vector_to_monomial(g)
         return_list.append([u,v,g])
+        # for i in range(n):
+        #     while vector[i] > 0:
+        #         vector[i] = vector[i] -1
+        #         v[i] = v[i] + 1
+        #         # if v[:-1] in P1:
+        #         if v in P1_pts:
+        #         # if degree_vector(v) == 1:
+        #         # if sum(v) == fdegree:
+        #             u = vector
+        #             vector = n * [0]
+
+        # g_vec = n * [0]
+        # vector = u
+        # for i in range(n):
+        #     while vector[i] > 0:
+        #         vector[i] = vector[i] - 1
+        #         g_vec[i] = g_vec[i] + 1
+        #         # print(g_vec)
+        #         # if degree(vector_to_monomial(g_vec)) == n-1:
+        #         # if affine_degree(vector_to_monomial(g_vec)) == n-1:
+        #         # if prod_rgens * vector_to_monomial(g_vec)
+        #         # if sum(g_vec) == (n-1) * fdegree - sum(weights)+1:
+
+        #         if vector_to_monomial(g_vec) in Pn_minus_1:
+        #         # if vector_to_monomial(g_vec) in g_vec_check_ideal:
+        #             # print(g_vec)
+        #             u = vector
+        #             vector = n * [0]
+        # g = c * vector_to_monomial(g_vec)
+        # return_list.append([u,v,g])
     return return_list
 
 
@@ -380,7 +394,7 @@ for i in range(len(B)):
     for u,v,g in to_uvg(h):
 
         # todo: speed up!
-        while vector_to_monomial(u) not in P1:
+        while vector_to_monomial(u) not in P1:# and degree_vector(u)>0:
         # while degree_vector(u)>1:
         # while sum(u) > fdegree:
             # print(u,v,g)
@@ -406,7 +420,7 @@ for i in range(len(B)):
                     l = r.lift(I)
                     m = affine_degree(monomial)
                     # m = (monomial.degree() +n)// f.degree()
-#                     print(monomial,m)
+                    # print(monomial,m)
                     temp = sum([l[i].derivative(Rgens[i]) for i in range(n)])//(m-1) #m-1? m+1? coherent for m+1?
                     reduction_dict[monomial] = temp + q
                 result = reduction_dict[monomial]
