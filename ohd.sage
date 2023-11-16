@@ -5,9 +5,9 @@ use_macaulay = False
 
 
 
-p = 7
+p = 11
 
-prec =3
+prec = 3
 
 # K = Qp(p,8)
 
@@ -16,21 +16,24 @@ R.<x,y,z> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4> = QQ[]
 
 
-# weights = [1,1,1]
-weights = [1,3,1]
+# weights = [1,1,1,1]
+weights = [1,1,1]
+# weights = [1,3,1]
 
 Rgens = R.gens()
 n = len(Rgens) #number of variables
 
 
 
-# f = x^3 - y - z^3 - x*y*z
-# f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
+# f = x^3 - y^3 - z^3 - x*y*z
+f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
 # f = x^5 + y^5 + z^5 - x*y*z^3
 # f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
-f = y^2 - x^6 - z^6-x^3*z^3
+# f = y^2 - x^6 - z^6-x^3*z^3
 # f = y^2 -(-2*x^6-x^5*z+3*x^4*z^2+x^3*z^3-2*x^2*z^4+x*z^5+3*z^6)
 # f = (2)*x^3+3*x^2*y+(4)*x*y^2+(5)*y^3+(5)*x^2*z+x*y*z+(7)*y^2*z+(5)*x*z^2+(7)*y*z^2+(1)*z^3
+
+# f = w^3 + x^3 +y^3 - z^3 - w*x*z+2*y*z^2
 
 # f = -w^4-w^3*x-w^2*x^2-x^4-w^3*y-w^2*x*y-w*x^2*y+x^3*y+w^2*y^2+w*x*y^2+x^2*y^2-w*y^3+y^4+w^3*z-w^2*x*z-x^3*z-w^2*y*z+w*x*y*z-w*y^2*z+x*y^2*z-w^2*z^2-x^2*z^2-w*y*z^2+x*y*z^2-y^2*z^2+y*z^3+z^4
 # f= 2*x_0^3+2*x_0*x_1^2+x_1^3+2*x_0^2*x_2-x_0*x_1*x_2+2*x_1^2*x_2+x_0*x_2^2+2*x_1*x_2^2+x_2^3-x_0^2*x_3-x_0*x_1*x_3-x_0*x_2*x_3+x_1*x_2*x_3+2*x_2^2*x_3+x_0*x_3^2-x_1*x_3^2-x_2*x_3^2+2*x_0^2*x_4+2*x_0*x_1*x_4-x_1^2*x_4-2*x_0*x_2*x_4-x_1*x_2*x_4+2*x_2^2*x_4+x_0*x_4^2-x_1*x_4^2-2*x_2*x_4^2
@@ -61,7 +64,7 @@ def vector_to_monomial(v):
 vertices =list(matrix.identity(n-1))
 for i in range(n-1):
     for j in range(n-1):
-        vertices[i][j] *= fdegree//weights[i]
+        vertices[i][j] *= fdegree//weights[i] #todo: double check
 vertices = [list(a) for a in vertices]
 vertices += [list(0 for _ in range(n-1))]
 lattice_polytope = Polyhedron(vertices)
@@ -72,7 +75,7 @@ P1 = [prod([Rgens[i]^mon[i] for i in range(n-1)])*Rgens[n-1]^((fdeg - sum([weigh
 P1_int = [a for a in P1 if lattice_polytope.interior_contains(a)]
 P1_int = [prod([Rgens[i]^mon[i] for i in range(n-1)])*Rgens[n-1]^((fdeg - sum([weights[i]*mon[i] for i in range(n-1)]))//weights[n-1])//(prod(Rgens)) for mon in P1_int]
 
-
+P1_pts = [monomial_to_vector(a) for a in P1]
 
 lift_dict = {}
 B= []
@@ -92,7 +95,20 @@ B = list(Set(B))
 print(len(B))
 print(B)
 
-# for l in range(1,n+2):
+Pn_minus_1 = set()
+l = n-1+1
+Pd = lattice_polytope.dilation(l)
+Pd = [a for a in Pd.integral_points()]
+
+# Pd = [a for a in Pd.integral_points() if lattice_polytope.interior_contains(a)]
+for mon in Pd:
+    mon = prod([Rgens[i]^mon[i] for i in range(n-1)])*Rgens[n-1]^((l*fdeg - sum([weights[i]*mon[i] for i in range(n-1)]))//weights[n-1])//(prod(Rgens))
+    Pn_minus_1.add(mon)
+
+
+# g_vec_check_ideal = R.ideal(list(Pn_minus_1)) #* I
+
+# for l in range(1,n+2): 
 #     Pd = lattice_polytope.dilation(l)
 #     # Pd_pts = [a for a in Pd.integral_points()]
 #     Pd_int = [a for a in Pd.integral_points() if Pd.interior_contains(a)]
@@ -281,7 +297,8 @@ def Ruv(u,v,g):
             u[i] = u[i] - 1
             v[i] = v[i] + 1
             # print(v)
-            if degree_vector(v)==1:
+            if vector_to_monomial(v) in P1:
+            # if degree_vector(v)==1:
             # if sum(v) == fdegree:
                 return (u,v,h/m)
 
@@ -295,49 +312,56 @@ def to_uvg(h):
         c = hdict[etuple]
         
 #         first check if it's divisible by something in the list
-        already_divisible = False
-        for j in range(len(return_list)):
-            if not already_divisible:
-                known_mono_tuple = return_list[j]
-                u,v,g = known_mono_tuple
-                if degree_vector(u) + degree(g) + 1 == degree_vector(etuple):
-                # if sum(u) + fdegree + g.degree() == sum(etuple):
-                    if sum([etuple[i] >= u[i] + v[i] for i in range(n)]) == n:
-                        g += c * vector_to_monomial([etuple[i] - u[i] - v[i] for i in range(n)])
-                        return_list[j] = [u,v,g]
-                        already_divisible = True
-        if not already_divisible:
+        # already_divisible = False
+        # for j in range(len(return_list)):
+        #     if not already_divisible:
+        #         known_mono_tuple = return_list[j]
+        #         u,v,g = known_mono_tuple
+        #         if degree_vector(u) + degree(g) + 1 == degree_vector(etuple):
+        #         # if sum(u) + fdegree + g.degree() == sum(etuple):
+        #             if sum([etuple[i] >= u[i] + v[i] for i in range(n)]) == n:
+        #                 g += c * vector_to_monomial([etuple[i] - u[i] - v[i] for i in range(n)])
+        #                 return_list[j] = [u,v,g]
+        #                 already_divisible = True
+        # if not already_divisible:
     
             
-            d = (sum(vector) -n)// f.degree()
+            # d = affine_degree(vector_to_monomial(vector))
+            # (sum(vector) -n)// f.degree()
 
-            u = n * [0]
-            v = n * [0]
+        u = n * [0]
+        v = n * [0]
 
-            for i in range(n):
-                while vector[i] > 1:
-                    vector[i] = vector[i] -1
-                    v[i] = v[i] + 1
-                    # if v[:-1] in P1:
-                    if degree_vector(v) == 1:
-                    # if sum(v) == fdegree:
-                        u = vector
-                        vector = n * [0]
+        for i in range(n):
+            while vector[i] > 0:
+                vector[i] = vector[i] -1
+                v[i] = v[i] + 1
+                # if v[:-1] in P1:
+                if v in P1_pts:
+                # if degree_vector(v) == 1:
+                # if sum(v) == fdegree:
+                    u = vector
+                    vector = n * [0]
 
-            g_vec = n * [0]
-            vector = u
-            for i in range(n):
-                while vector[i] > 0:
-                    vector[i] = vector[i] - 1
-                    g_vec[i] = g_vec[i] + 1
-                    # print(g_vec)
-                    # if degree(vector_to_monomial(g_vec)) == n-1:
-                    if sum(g_vec) == (n-1) * fdegree - sum(weights)+1:
-                        # print(g_vec)
-                        u = vector
-                        vector = n * [0]
-            g = c * vector_to_monomial(g_vec)
-            return_list.append([u,v,g])
+        g_vec = n * [0]
+        vector = u
+        for i in range(n):
+            while vector[i] > 0:
+                vector[i] = vector[i] - 1
+                g_vec[i] = g_vec[i] + 1
+                # print(g_vec)
+                # if degree(vector_to_monomial(g_vec)) == n-1:
+                # if affine_degree(vector_to_monomial(g_vec)) == n-1:
+                # if prod_rgens * vector_to_monomial(g_vec)
+                # if sum(g_vec) == (n-1) * fdegree - sum(weights)+1:
+
+                if vector_to_monomial(g_vec) in Pn_minus_1:
+                # if vector_to_monomial(g_vec) in g_vec_check_ideal:
+                    print(g_vec)
+                    u = vector
+                    vector = n * [0]
+        g = c * vector_to_monomial(g_vec)
+        return_list.append([u,v,g])
     return return_list
 
 
@@ -351,9 +375,14 @@ for i in range(len(B)):
     # print(h)
     htemp = 0
     for u,v,g in to_uvg(h):
-        while degree_vector(u)>1:
+
+        # todo: speed up!
+        while vector_to_monomial(u) not in P1:
+        # while degree_vector(u)>1:
         # while sum(u) > fdegree:
+            # print(u,v,g)
             u,v,g = Ruv(u,v,g)
+            print(u,v,g)
         htemp += vector_to_monomial(u) * vector_to_monomial(v) * g
     h = htemp
     
@@ -375,7 +404,7 @@ for i in range(len(B)):
                     m = affine_degree(monomial)
                     # m = (monomial.degree() +n)// f.degree()
 #                     print(monomial,m)
-                    temp = sum([l[i].derivative(Rgens[i]) for i in range(n)])/(m-1) #m-1? m+1? coherent for m+1?
+                    temp = sum([l[i].derivative(Rgens[i]) for i in range(n)])//(m-1) #m-1? m+1? coherent for m+1?
                     reduction_dict[monomial] = temp + q
                 result = reduction_dict[monomial]
                 for _ in result.monomials():
