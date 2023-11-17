@@ -1,4 +1,3 @@
-print('hi')
 
 fdeg = f.degree()
 prod_rgens = prod(Rgens)
