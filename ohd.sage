@@ -2,7 +2,7 @@ from sympy.utilities.iterables import multiset_permutations
 
 DEBUG = True
 
-p = 11
+p = 7
 
 prec = 4
 
@@ -15,8 +15,8 @@ R.<x,y,z> = QQ[]
 
 
 # weights = [1,1,1,1]
-weights = [1,1,1]
-# weights = [1,3,1]
+# weights = [1,1,1]
+weights = [1,3,1]
 
 Rgens = R.gens()
 n = len(Rgens) #number of variables
@@ -25,10 +25,10 @@ n = len(Rgens) #number of variables
 
 
 # f = x^3 - y^3 - z^3 - x*y*z
-f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
+# f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
 # f = x^5 + y^5 + z^5 - x*y*z^3
 # f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
-# f = y^2 - x^6 - z^6-x^3*z^3
+f = y^2 - x^6 - z^6-x^3*z^3
 # f = y^2 -(-2*x^6-x^5*z+3*x^4*z^2+x^3*z^3-2*x^2*z^4+x*z^5+3*z^6)
 # f = (2)*x^3+3*x^2*y+(4)*x*y^2+(5)*y^3+(5)*x^2*z+x*y*z+(7)*y^2*z+(5)*x*z^2+(7)*y*z^2+(1)*z^3
 
@@ -151,14 +151,15 @@ def lift_poly(g):
             summer[i] += c*monomial_lift[i]
     return summer
 
+# Ruv_dict = {}
+
 def Ruv(u,v,g):
     gi = lift_poly(vector_to_monomial(v)*g)
-    m = affine_degree(vector_to_monomial(u)*g)
 
     h = sum([(u[i] +1)*gi[i] + Rgens[i] * (gi[i]).derivative(Rgens[i]) for i in range(n)])
     for v in P1_pts:
         if all([u[i]>=v[i] for i in range(n)]):
-            return ([u[i]-v[i] for i in range(n)],v,h/m)
+            return ([u[i]-v[i] for i in range(n)],v,h)
     print("error: R(u,v,g) failed for",u,v,g)
 
 
@@ -195,11 +196,12 @@ for i in range(len(B)):
     h = frobenius_on_cohom(i,prec)
     htemp = 0
     for u,v,g in to_uvg(h):
-
+        # todo: can deduce degree u
+        denom = factorial(degree(vector_to_monomial(u))+n)
         # todo: speed up!
-        while vector_to_monomial(u) not in P1:# and degree_vector(u)>0:
+        while vector_to_monomial(u) not in P1:
             u,v,g = Ruv(u,v,g)
-        htemp += vector_to_monomial(u) * vector_to_monomial(v) * g
+        htemp += vector_to_monomial(u) * vector_to_monomial(v) * g // denom
     h = htemp
     
     summer = R(0)
@@ -216,14 +218,13 @@ for i in range(len(B)):
                     q = J(monomial).lift()
                     r = monomial - q
                     l = r.lift(I)
-                    m = affine_degree(monomial)
-                    temp = sum([l[i].derivative(Rgens[i]) for i in range(n)])//(m-1) #m-1? m+1? coherent for m+1?
+                    temp = sum([l[i].derivative(Rgens[i]) for i in range(n)])
                     reduction_dict[monomial] = temp + q
                 result = reduction_dict[monomial]
                 for _ in result.monomials():
                     monomial_list.append(_*term.monomial_coefficient(monomial) * result.monomial_coefficient(_))
             else:
-                summer += term.monomial_coefficient(monomial) * monomial
+                summer += term.monomial_coefficient(monomial) * monomial * factorial(degree(monomial))
         else:
             summer += term
     
