@@ -4,21 +4,21 @@ DEBUG = True
 
 p = 7
 
-prec = 2
+prec = 4
 
 if DEBUG:
     assert(is_prime_power(p))
 
-# R.<x,y,z> = QQ[]
+R.<x,y,z> = QQ[]
 # R.<w,x,y,z> = QQ[]
-R.<x_0,x_1,x_2,x_3,x_4> = QQ[]
+# R.<x_0,x_1,x_2,x_3,x_4> = QQ[]
 
 
 # weights = [1,1,1,1]
-# weights = [1,1,1]
+weights = [1,1,1]
 # weights = [1,3,1]
 
-weights = [11,14,18,20,25] # --> correct from typo in example 7.2
+# weights = [11,14,18,20,25] # --> correct from typo in example 7.2
 
 Rgens = R.gens()
 n = len(Rgens) #number of variables
@@ -27,14 +27,14 @@ n = len(Rgens) #number of variables
 
 
 # f = x^3 - y^3 - z^3 - x*y*z
-# f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
+f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
 # f = x^5 + y^5 + z^5 - x*y*z^3
 # f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
 # f = y^2 - x^6 - z^6-x^3*z^3
 # f = y^2 -(-2*x^6-x^5*z+3*x^4*z^2+x^3*z^3-2*x^2*z^4+x*z^5+3*z^6)
 # f = (2)*x^3+3*x^2*y+(4)*x*y^2+(5)*y^3+(5)*x^2*z+x*y*z+(7)*y^2*z+(5)*x*z^2+(7)*y*z^2+(1)*z^3
 
-f = x_0^8 + x_1^5 * x_2 + x_0^2 * x_1^2 *x_2*x_3 + x_1*x_2^3*x_3 + x_1^2*x_3^3 + x_0*x_1*x_2*x_3*x_4+x_2*x_3*x_4^2
+# f = x_0^8 + x_1^5 * x_2 + x_0^2 * x_1^2 *x_2*x_3 + x_1*x_2^3*x_3 + x_1^2*x_3^3 + x_0*x_1*x_2*x_3*x_4+x_2*x_3*x_4^2
 
 # f = w^3 + x^3 +y^3 - z^3 - w*x*z+2*y*z^2
 # f = x^4 + y^4 + z^4 + w^4 - w * x * y *z
@@ -161,17 +161,6 @@ def lift_poly(g):
             summer[i] += c*monomial_lift[i]
     return summer
 
-# Ruv_dict = {}
-
-def Ruv(u,v,g):
-    gi = lift_poly(vector_to_monomial(v)*g)
-
-    h = sum([(u[i] +1)*gi[i] + Rgens[i] * (gi[i]).derivative(Rgens[i]) for i in range(n)])
-    for v in P1_pts:
-        if all([u[i]>=v[i] for i in range(n)]):
-            return ([u[i]-v[i] for i in range(n)],v,h)
-    print("error: R(u,v,g) failed for",u,v,g)
-
 
 def to_uvg(h):
     hdict = h.dict()
@@ -181,21 +170,34 @@ def to_uvg(h):
         c = hdict[etuple]
         # todo: save on divisibility?
 
-        u = n * [0]
+        # u = n * [0]
         v = n * [0]
         g = 0
         for g_vec in Pn_minus_1_pts:
             if all([vector[i] >= g_vec[i] for i in range(n)]):
                 g = g_vec
         vector = [vector[i] - g[i] for i in range(n)]
-        for v_vec in P1_pts:
-            if all([vector[i] >= v_vec[i] for i in range(n)]):
-                v = v_vec
-        vector = [vector[i] - v[i] for i in range(n)]
+        # for v_vec in P1_pts:
+        #     if all([vector[i] >= v_vec[i] for i in range(n)]):
+        #         v = v_vec
+        # vector = [vector[i] - v[i] for i in range(n)]
         u = vector
         g = c * vector_to_monomial(g)
-        return_list.append([u,v,g])
+        # return_list.append([u,v,g])
+        return_list.append([u,g])
     return return_list
+
+# set of matrices of size |Pn_minus_1| x |Pn_minus_1|
+# Ruv_dict = {}
+
+
+def Ruv(u,v,g):
+    gi = lift_poly(vector_to_monomial(v)*g)
+
+    h = sum([(u[i] +1)*gi[i] + Rgens[i] * (gi[i]).derivative(Rgens[i]) for i in range(n)])
+    return h
+    print("error: R(u,v,g) failed for",u,v,g)
+
 
 
 reduction_dict = {}
@@ -205,14 +207,20 @@ frob_matrix = [[0 for i in range(len(B))] for j in range(len(B))]
 for i in range(len(B)):
     h = frobenius_on_cohom(i,prec)
     htemp = 0
-    for u,v,g in to_uvg(h):
+    for u,g in to_uvg(h):
         # todo: can deduce degree u
         # todo: can just keep track of denom as (denom % p^prec) * p^something
-        denom = factorial(degree(vector_to_monomial(u))+n)
+        # u = [u[i] + v[i] for i in range(n)]
+        denom = factorial(degree(vector_to_monomial(u))-1+n)
+        v = 0
         # todo: speed up!
-        while vector_to_monomial(u) not in P1:
-            u,v,g = Ruv(u,v,g)
-        htemp += vector_to_monomial(u) * vector_to_monomial(v) * g // denom
+        for v0 in P1_pts:
+            while (u not in P1_pts) and all([u[i]>=v0[i] for i in range(n)]):
+                v = v0
+                u = [u[i]-v[i] for i in range(n)]
+                g = Ruv(u,v,g)
+                
+        htemp += vector_to_monomial(u) * g // denom
     h = htemp
     
     summer = R(0)
