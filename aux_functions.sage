@@ -1,5 +1,5 @@
 
-fdeg = f.degree()
+fdeg = fdegree
 prod_rgens = prod(Rgens)
 def degree(g):
 

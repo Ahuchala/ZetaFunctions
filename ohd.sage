@@ -9,16 +9,16 @@ prec = 2
 if DEBUG:
     assert(is_prime_power(p))
 
-R.<x,y,z> = QQ[]
+# R.<x,y,z> = QQ[]
 # R.<w,x,y,z> = QQ[]
-# R.<x_0,x_1,x_2,x_3,x_4> = QQ[]
+R.<x_0,x_1,x_2,x_3,x_4> = QQ[]
 
 
 # weights = [1,1,1,1]
-weights = [1,1,1]
+# weights = [1,1,1]
 # weights = [1,3,1]
 
-# weights = [11,14,18,20,25] # --> typo in example 7.2
+weights = [11,14,18,20,25] # --> correct from typo in example 7.2
 
 Rgens = R.gens()
 n = len(Rgens) #number of variables
@@ -34,7 +34,7 @@ n = len(Rgens) #number of variables
 # f = y^2 -(-2*x^6-x^5*z+3*x^4*z^2+x^3*z^3-2*x^2*z^4+x*z^5+3*z^6)
 # f = (2)*x^3+3*x^2*y+(4)*x*y^2+(5)*y^3+(5)*x^2*z+x*y*z+(7)*y^2*z+(5)*x*z^2+(7)*y*z^2+(1)*z^3
 
-# f = x_0^8 + x_1^5 * x_2 + x_0^2 * x_1^2 *x_2*x_3 + x_1*x_2^3*x_3 + x_1^2*x_3^3 + x_0*x_1*x_2*x_3*x_4+x_2*x_3*x_4^2
+f = x_0^8 + x_1^5 * x_2 + x_0^2 * x_1^2 *x_2*x_3 + x_1*x_2^3*x_3 + x_1^2*x_3^3 + x_0*x_1*x_2*x_3*x_4+x_2*x_3*x_4^2
 
 # f = w^3 + x^3 +y^3 - z^3 - w*x*z+2*y*z^2
 # f = x^4 + y^4 + z^4 + w^4 - w * x * y *z
