@@ -47,7 +47,6 @@ J = R.quotient(I)
 xI = R.ideal([_*f.derivative(_) for _ in R.gens()])# + [f])
 xJ = R.quotient(xI)
 
-load("aux_functions.sage")
 # d = f.degree()
 # fdegree = d
 
@@ -63,6 +62,8 @@ fdegree = d
 if DEBUG:
     assert(all([sum([weights[i]*monomial_to_vector(a)[i] for i in range(n)])==fdegree for a in f.monomials()]))
 
+
+load("aux_functions.sage")
 
 vertices =list(matrix.identity(n-1))
 for i in range(n-1):
