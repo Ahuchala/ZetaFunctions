@@ -7,8 +7,9 @@ p = 11
 prec = 3
 
 if DEBUG:
-    assert(is_prime_power(p))
+    assert(is_prime(p))
 
+# todo: modular arithmetic
 R.<x,y,z> = QQ[]
 # R.<w,x,y,z> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4> = QQ[]
