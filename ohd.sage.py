@@ -53,6 +53,9 @@ J = R.quotient(I)
 xI = R.ideal([_*f.derivative(_) for _ in R.gens()])# + [f])
 xJ = R.quotient(xI)
 
+if DEBUG:
+    assert(ProjectiveSpace(R.change_ring(GF(p))).subscheme(f).is_smooth())
+
 # d = f.degree()
 # fdegree = d
 
