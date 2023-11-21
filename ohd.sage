@@ -2,7 +2,7 @@ from sympy.utilities.iterables import multiset_permutations
 
 DEBUG = True
 
-p = 7
+p = 17
 
 prec = 4
 
@@ -109,14 +109,27 @@ for mon in Pd:
     Pn_minus_1.add(mon)
 Pn_minus_1.remove(0)
 Pn_minus_1_pts = [monomial_to_vector(a) for a in Pn_minus_1]
+size_pn_minus_1 = len(Pn_minus_1_pts)
 
-Pd_dict = {}
+Pn_minus_1_list = list(Pn_minus_1)
 
+def to_pn_minus_1_basis(g):
+    return_vec = size_pn_minus_1 * [0]
+    for monomial in g.monomials():
+        ind = Pn_minus_1_list.index(monomial)
+        return_vec[ind] = g.monomial_coefficient(monomial)
+    return return_vec
+
+def from_pn_minus_1_basis(g_vec):
+    return sum([g_vec[i] * Pn_minus_1_list[i] for i in range(size_pn_minus_1)])
+
+    
 for part in Partitions((n-1)*d-sum(weights)+1+d, max_length=n):
 #       pad with zeros
     part += [0] * (n - len(part))
 
     for perm in multiset_permutations(part):
+
         perm = [perm[i] // weights[i] for i in range(n)]
         m = vector_to_monomial(perm)
 #                 use cached lifts
@@ -188,15 +201,44 @@ def to_uvg(h):
     return return_list
 
 # set of matrices of size |Pn_minus_1| x |Pn_minus_1|
-# Ruv_dict = {}
+Ruv_const_dict = {}
+Ruv_u_dict = {}
+
+def Ruv_const_helper(v,g):
+    gi = lift_poly(vector_to_monomial(v)*g)
+    h = sum([gi[i] + Rgens[i] * (gi[i]).derivative(Rgens[i]) for i in range(n)])
+    return to_pn_minus_1_basis(h)
+
+def Ruv_u_helper(v,g):
+    gi = lift_poly(vector_to_monomial(v)*g)
+    return_ls = [gi[i] for i in range(n)]
+    return [to_pn_minus_1_basis(a) for a in return_ls]
+
+def compute_Ruv(v):
+    Ruv_u_mat = [list(matrix(size_pn_minus_1)) for i in range(n)]
+    Ruv_const_mat = list(matrix(size_pn_minus_1))
+
+    for i in range(size_pn_minus_1):
+        g = Pn_minus_1_list[i]
+        temp = Ruv_u_helper(v,g)
+        for j in range(n):
+            Ruv_u_mat[j][i] = temp[j]
+        Ruv_const_mat[i] = Ruv_const_helper(v,g)
+    Ruv_const_dict[tuple(v)] = matrix(Ruv_const_mat)
+    Ruv_u_dict[tuple(v)] = tuple([matrix(Ruv_u_mat[i]) for i in range(n)])
+    return
 
 
 def Ruv(u,v,g):
-    gi = lift_poly(vector_to_monomial(v)*g)
+    if not tuple(v) in Ruv_u_dict.keys():
+        compute_Ruv(v)
+    return g * (Ruv_const_dict[tuple(v)] + sum([u[i] * Ruv_u_dict[tuple(v)][i] for i in range(n)]))
 
-    h = sum([(u[i] +1)*gi[i] + Rgens[i] * (gi[i]).derivative(Rgens[i]) for i in range(n)])
-    return h
-    print("error: R(u,v,g) failed for",u,v,g)
+
+# def Ruv_helper(u,v,g):
+#     gi = lift_poly(vector_to_monomial(v)*g)
+#     h = sum([(u[i] +1)*gi[i] + Rgens[i] * (gi[i]).derivative(Rgens[i]) for i in range(n)])
+#     return h
 
 
 
@@ -210,15 +252,17 @@ for i in range(len(B)):
     for u,g in to_uvg(h):
         # todo: can deduce degree u
         # todo: can just keep track of denom as (denom % p^prec) * p^something
-        # u = [u[i] + v[i] for i in range(n)]
         denom = factorial(degree(vector_to_monomial(u))-1+n)
         v = 0
+        g_vec = matrix(to_pn_minus_1_basis(g))
         # todo: speed up!
-        for v0 in P1_pts:
-            while (u not in P1_pts) and all([u[i]>=v0[i] for i in range(n)]):
-                v = v0
+        for v in P1_pts:
+            while (u not in P1_pts) and all([u[i]>=v[i] for i in range(n)]):
                 u = [u[i]-v[i] for i in range(n)]
-                g = Ruv(u,v,g)
+
+                g_vec = Ruv(u,v,g_vec)
+        g = R(from_pn_minus_1_basis(transpose(g_vec)))
+
                 
         htemp += vector_to_monomial(u) * g // denom
     h = htemp
