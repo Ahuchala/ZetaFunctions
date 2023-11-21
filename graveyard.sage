@@ -44,3 +44,5 @@ def Ruv(u,v,g):
     if not tuple(v) in Ruv_u_dict.keys():
         compute_Ruv(v)
     return g * (Ruv_const_dict[tuple(v)] + sum([u[i] * Ruv_u_dict[tuple(v)][i] for i in range(n)]))
+
+assert(ProjectiveSpace(R.change_ring(GF(p))).subscheme(f).is_smooth())
