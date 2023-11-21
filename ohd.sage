@@ -125,8 +125,11 @@ def to_pn_minus_1_basis(g):
         return_vec[ind] = g.monomial_coefficient(monomial)
     return return_vec
 
+# todo: figure out why I need to cast to R
 def from_pn_minus_1_basis(g_vec):
     return sum([g_vec[i] * Pn_minus_1_list[i] for i in range(size_pn_minus_1)])
+
+    # return sum([R(g_vec[i]) * Pn_minus_1_list[i] for i in range(size_pn_minus_1)])
 
     
 for part in Partitions((n-1)*d-sum(weights)+1+d, max_length=n):
@@ -228,7 +231,7 @@ def compute_Ruv(v):
 
 
 def reduce_griffiths_dwork(u,g):
-    g_vec = matrix(to_pn_minus_1_basis(g))
+    g_vec = vector(matrix(to_pn_minus_1_basis(g)))
     # todo: speed up!
     for v in P1_pts:
         if (u not in P1_pts) and all([u[i]>=v[i] for i in range(n)]):
@@ -241,7 +244,7 @@ def reduce_griffiths_dwork(u,g):
             while (u not in P1_pts) and all([u[i]>=v[i] for i in range(n)]):
                 u = [u[i]-v[i] for i in range(n)]
                 g_vec = g_vec * (Ruv_const_dict_tuple_v + sum([u[i] * Ruv_u_dict_tuple_v[i] for i in range(n)]))
-    g = R(from_pn_minus_1_basis(transpose(g_vec)))
+    g = from_pn_minus_1_basis(vector(g_vec))
     
     return u,g
 
