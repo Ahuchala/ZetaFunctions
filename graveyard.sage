@@ -32,3 +32,15 @@ if use_macaulay:
     s[0] = s[0][1:]
     for i in range(len(b)):
         lift_dict[R(b[i])] = [R(_[i]) for _ in s]
+
+
+
+# def Ruv_helper(u,v,g):
+#     gi = lift_poly(vector_to_monomial(v)*g)
+#     h = sum([(u[i] +1)*gi[i] + Rgens[i] * (gi[i]).derivative(Rgens[i]) for i in range(n)])
+#     return h
+
+def Ruv(u,v,g):
+    if not tuple(v) in Ruv_u_dict.keys():
+        compute_Ruv(v)
+    return g * (Ruv_const_dict[tuple(v)] + sum([u[i] * Ruv_u_dict[tuple(v)][i] for i in range(n)]))

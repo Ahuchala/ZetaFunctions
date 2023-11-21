@@ -15,3 +15,4 @@ def degree_vector(v):
 # return the degree of g * xyz, etc
 def affine_degree(g):
 	return degree(prod_rgens*g)
+

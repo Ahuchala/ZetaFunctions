@@ -4,7 +4,7 @@ DEBUG = True
 
 p = 17
 
-prec = 4
+prec = 3
 
 if DEBUG:
     assert(is_prime_power(p))
@@ -15,8 +15,8 @@ R.<x,y,z> = QQ[]
 
 
 # weights = [1,1,1,1]
-weights = [1,1,1]
-# weights = [1,3,1]
+# weights = [1,1,1]
+weights = [1,3,1]
 
 # weights = [11,14,18,20,25] # --> correct from typo in example 7.2
 
@@ -27,11 +27,11 @@ n = len(Rgens) #number of variables
 
 
 # f = x^3 - y^3 - z^3 - x*y*z
-f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
+# f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
 # f = x^5 + y^5 + z^5 - x*y*z^3
 # f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
 # f = y^2 - x^6 - z^6-x^3*z^3
-# f = y^2 -(-2*x^6-x^5*z+3*x^4*z^2+x^3*z^3-2*x^2*z^4+x*z^5+3*z^6)
+f = y^2 -(-2*x^6-x^5*z+3*x^4*z^2+x^3*z^3-2*x^2*z^4+x*z^5+3*z^6)
 # f = (2)*x^3+3*x^2*y+(4)*x*y^2+(5)*y^3+(5)*x^2*z+x*y*z+(7)*y^2*z+(5)*x*z^2+(7)*y*z^2+(1)*z^3
 
 # f = x_0^8 + x_1^5 * x_2 + x_0^2 * x_1^2 *x_2*x_3 + x_1*x_2^3*x_3 + x_1^2*x_3^3 + x_0*x_1*x_2*x_3*x_4+x_2*x_3*x_4^2
@@ -183,20 +183,13 @@ def to_uvg(h):
         c = hdict[etuple]
         # todo: save on divisibility?
 
-        # u = n * [0]
-        v = n * [0]
         g = 0
         for g_vec in Pn_minus_1_pts:
             if all([vector[i] >= g_vec[i] for i in range(n)]):
                 g = g_vec
         vector = [vector[i] - g[i] for i in range(n)]
-        # for v_vec in P1_pts:
-        #     if all([vector[i] >= v_vec[i] for i in range(n)]):
-        #         v = v_vec
-        # vector = [vector[i] - v[i] for i in range(n)]
         u = vector
         g = c * vector_to_monomial(g)
-        # return_list.append([u,v,g])
         return_list.append([u,g])
     return return_list
 
@@ -229,17 +222,23 @@ def compute_Ruv(v):
     return
 
 
-def Ruv(u,v,g):
-    if not tuple(v) in Ruv_u_dict.keys():
-        compute_Ruv(v)
-    return g * (Ruv_const_dict[tuple(v)] + sum([u[i] * Ruv_u_dict[tuple(v)][i] for i in range(n)]))
+def reduce_griffiths_dwork(u,g):
+    g_vec = matrix(to_pn_minus_1_basis(g))
+    # todo: speed up!
+    for v in P1_pts:
+        if (u not in P1_pts) and all([u[i]>=v[i] for i in range(n)]):
 
+            if not tuple(v) in Ruv_u_dict.keys():
+                compute_Ruv(v)
+            Ruv_const_dict_tuple_v = Ruv_const_dict[tuple(v)]
+            Ruv_u_dict_tuple_v = Ruv_u_dict[tuple(v)]
 
-# def Ruv_helper(u,v,g):
-#     gi = lift_poly(vector_to_monomial(v)*g)
-#     h = sum([(u[i] +1)*gi[i] + Rgens[i] * (gi[i]).derivative(Rgens[i]) for i in range(n)])
-#     return h
-
+            while (u not in P1_pts) and all([u[i]>=v[i] for i in range(n)]):
+                u = [u[i]-v[i] for i in range(n)]
+                g_vec = g_vec * (Ruv_const_dict_tuple_v + sum([u[i] * Ruv_u_dict_tuple_v[i] for i in range(n)]))
+    g = R(from_pn_minus_1_basis(transpose(g_vec)))
+    
+    return u,g
 
 
 reduction_dict = {}
@@ -253,17 +252,10 @@ for i in range(len(B)):
         # todo: can deduce degree u
         # todo: can just keep track of denom as (denom % p^prec) * p^something
         denom = factorial(degree(vector_to_monomial(u))-1+n)
-        v = 0
-        g_vec = matrix(to_pn_minus_1_basis(g))
-        # todo: speed up!
-        for v in P1_pts:
-            while (u not in P1_pts) and all([u[i]>=v[i] for i in range(n)]):
-                u = [u[i]-v[i] for i in range(n)]
 
-                g_vec = Ruv(u,v,g_vec)
-        g = R(from_pn_minus_1_basis(transpose(g_vec)))
+        # this is the slow step
+        u,g = reduce_griffiths_dwork(u,g)
 
-                
         htemp += vector_to_monomial(u) * g // denom
     h = htemp
     
