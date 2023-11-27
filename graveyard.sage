@@ -46,3 +46,24 @@ def Ruv(u,v,g):
     return g * (Ruv_const_dict[tuple(v)] + sum([u[i] * Ruv_u_dict[tuple(v)][i] for i in range(n)]))
 
 assert(ProjectiveSpace(R.change_ring(GF(p))).subscheme(f).is_smooth())
+
+
+def to_uvg(h):
+    hdict = h.dict()
+    return_list = []
+
+
+    for etuple in hdict.keys():
+        vector = list(etuple)
+        c = hdict[etuple]
+        # todo: save on divisibility?
+
+        g = 0
+        for g_vec in Pn_minus_1_pts:
+            if all([vector[i] >= g_vec[i] for i in range(n)]):
+                g = g_vec
+        vector = [vector[i] - g[i] for i in range(n)]
+        u = vector
+        g = c * vector_to_monomial(g)
+        return_list.append([u,g])
+    return return_list
