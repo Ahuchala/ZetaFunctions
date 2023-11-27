@@ -4,7 +4,7 @@ DEBUG = True
 
 p = 7
 
-prec = 3
+prec = 2
 
 if DEBUG:
     assert(is_prime(p))
@@ -192,7 +192,7 @@ def lift_poly(g):
 
 # given frob(g) = h, return a minimal set of elements of form [u,g] such that h = sum(x^u * g)
 def to_uvg(h):
-    # print("beginning to_uvg")
+    print("beginning to_uvg")
     hdict = h.dict()
     hdict_keys = hdict.keys()
 
@@ -204,12 +204,15 @@ def to_uvg(h):
     # first stratify by degrees
     for deg in degrees:
         mon_keys = set([a for a in hdict_keys if degree_vector(a) == deg])
+
+        # u_checked = set()
         while len(mon_keys)>0:
             # search through all valid g options to find all valid u options
             # might be good to remember which values of u we've checked to avoid duplicates
 
             div_count_record = -1
             u_record = 0
+            # u_checked = set()
 
             for v in Pn_minus_1_pts:
 
@@ -217,11 +220,16 @@ def to_uvg(h):
                 for mon in mon_keys:
                     if all([mon[i]>=v[i] for i in range(n)]):
                         u = [mon[i]-v[i] for i in range(n)]
+                        # if not tuple(u) in u_checked:
+                        
                         # now check how many elements in mon_keys are divisible by u
-                        div_count = sum([1 for a in mon_keys if all([a[i]>=u[i] for i in range(n)])])
+                        div_count = len([0 for a in mon_keys if all([a[i]>=u[i] for i in range(n)])])
                         if div_count > div_count_record:
                             div_count_record = div_count
                             u_record = u
+                        # else:
+                            # u_checked.add(tuple(u))
+
             # now append the tuple [u,g] and remove the corresponding monomials from mon_keys
             mons = [a for a in mon_keys if all([a[i]>=u_record[i] for i in range(n)])]
             mon_keys -= set(mons)
@@ -230,7 +238,8 @@ def to_uvg(h):
 
 
 
-    # print("end to_uvg")
+    print("end to_uvg")
+    print(return_list)
     return return_list
 
 # set of matrices of size |Pn_minus_1| x |Pn_minus_1|
