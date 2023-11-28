@@ -142,3 +142,25 @@ def to_uvg(h):
     print("end to_uvg")
     print(return_list)
     return return_list
+
+
+
+def reduce_griffiths_dwork(u,g):
+    g_vec = vector(matrix(to_pn_minus_1_basis(g)))
+    # todo: speed up!
+    for v in P1_pts:
+        if (u not in P1_pts) and all([u[i]>=v[i] for i in range(n)]):
+
+            if not tuple(v) in Ruv_u_dict.keys():
+                compute_Ruv(v)
+            Ruv_const_dict_tuple_v = Ruv_const_dict[tuple(v)]
+            Ruv_u_dict_tuple_v = Ruv_u_dict[tuple(v)]
+
+
+            while (u not in P1_pts) and all([u[i]>=v[i] for i in range(n)]):
+                u = [u[i]-v[i] for i in range(n)]
+                # left g -> g A
+                g_vec *=  (Ruv_const_dict_tuple_v + sum([u[i] * Ruv_u_dict_tuple_v[i] for i in range(n)]))
+    g = from_pn_minus_1_basis(vector(g_vec))
+    
+    return u,g

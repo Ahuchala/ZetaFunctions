@@ -30,11 +30,11 @@ n = len(Rgens) #number of variables
 
 # f = x^3 - y^3 - z^3 - x*y*z
 # f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
-f = x^5 + y^5 + z^5 - x*y*z^3
+# f = x^5 + y^5 + z^5 - x*y*z^3
 # f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
 # f = y^2 - x^6 - z^6-x^3*z^3
 # f = y^2 -(-2*x^6-x^5*z+3*x^4*z^2+x^3*z^3-2*x^2*z^4+x*z^5+3*z^6)
-# f = (2)*x^3+3*x^2*y+(4)*x*y^2+(5)*y^3+(5)*x^2*z+x*y*z+(7)*y^2*z+(5)*x*z^2+(7)*y*z^2+(1)*z^3
+f = (2)*x^3+3*x^2*y+(4)*x*y^2+(5)*y^3+(5)*x^2*z+x*y*z+(7)*y^2*z+(5)*x*z^2+(7)*y*z^2+(1)*z^3
 
 # f = x_0^8 + x_1^5 * x_2 + x_0^2 * x_1^2 *x_2*x_3 + x_1*x_2^3*x_3 + x_1^2*x_3^3 + x_0*x_1*x_2*x_3*x_4+x_2*x_3*x_4^2
 
@@ -243,18 +243,37 @@ def compute_Ruv(v):
 def reduce_griffiths_dwork(u,g):
     g_vec = vector(matrix(to_pn_minus_1_basis(g)))
     # todo: speed up!
-    for v in P1_pts:
-        if (u not in P1_pts) and all([u[i]>=v[i] for i in range(n)]):
+    while (u not in P1_pts):
+        best_k = -1
+        best_v = -1
+        for v in P1_pts:
+            k = max(u) # garbage value
+            for i in range(n):
+                if v[i]>0:
+                    k = min(k, u[i]//v[i])
+            if k > best_k:
+                best_k = k
+                best_v = v
+        v = best_v
+        k = best_k
+        if degree_vector([u[i] - k*v[i] for i in range(n)]) == 0:
+            # print("error: overcounted")
+            k -= 1
+        # print(u,v,k)
 
-            if not tuple(v) in Ruv_u_dict.keys():
-                compute_Ruv(v)
-            Ruv_const_dict_tuple_v = Ruv_const_dict[tuple(v)]
-            Ruv_u_dict_tuple_v = Ruv_u_dict[tuple(v)]
+        if not tuple(v) in Ruv_u_dict.keys():
+            compute_Ruv(v)
+        C = Ruv_const_dict[tuple(v)]
+        D = Ruv_u_dict[tuple(v)]
 
-            while (u not in P1_pts) and all([u[i]>=v[i] for i in range(n)]):
-                u = [u[i]-v[i] for i in range(n)]
-                # left g -> g A
-                g_vec *=  (Ruv_const_dict_tuple_v + sum([u[i] * Ruv_u_dict_tuple_v[i] for i in range(n)]))
+        E = C + sum([u[i]* D[i] for i in range(n)])
+        F = sum([v[i] * D[i] for i in range(n)])
+
+        for ind in range(1,k+1):
+            # left g -> g A
+            g_vec *= (E-ind*F)
+            # g_vec *=  (C + sum([(u[i]-ind*v[i]) * D[i] for i in range(n)]))
+        u = [u[i] - k*v[i] for i in range(n)]
     g = from_pn_minus_1_basis(vector(g_vec))
     
     return u,g
