@@ -2,22 +2,22 @@ from sympy.utilities.iterables import multiset_permutations
 
 DEBUG = True
 
-p = 7
+p = 17
 
-prec = 2
+prec = 3
 
 if DEBUG:
     assert(is_prime(p))
 
 # todo: modular arithmetic
-R.<x,y,z> = QQ[]
-# R.<w,x,y,z> = QQ[]
+# R.<x,y,z> = QQ[]
+R.<w,x,y,z> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4> = QQ[]
 
 
 # weights = [3,1,1,1]
-# weights = [1,1,1,1]
-weights = [1,1,1]
+weights = [1,1,1,1]
+# weights = [1,1,1]
 # weights = [1,3,1]
 
 # weights = [11,14,18,20,25] # --> correct from typo in example 7.2
@@ -34,12 +34,12 @@ n = len(Rgens) #number of variables
 # f = x^4 + y^4 + z^4-x*y*z^2+4*x^2*z^2
 # f = y^2 - x^6 - z^6-x^3*z^3
 # f = y^2 -(-2*x^6-x^5*z+3*x^4*z^2+x^3*z^3-2*x^2*z^4+x*z^5+3*z^6)
-f = (2)*x^3+3*x^2*y+(4)*x*y^2+(5)*y^3+(5)*x^2*z+x*y*z+(7)*y^2*z+(5)*x*z^2+(7)*y*z^2+(1)*z^3
+# f = (2)*x^3+3*x^2*y+(4)*x*y^2+(5)*y^3+(5)*x^2*z+x*y*z+(7)*y^2*z+(5)*x*z^2+(7)*y*z^2+(1)*z^3
 
 # f = x_0^8 + x_1^5 * x_2 + x_0^2 * x_1^2 *x_2*x_3 + x_1*x_2^3*x_3 + x_1^2*x_3^3 + x_0*x_1*x_2*x_3*x_4+x_2*x_3*x_4^2
 
 # f =w^2 - x^6 - y^6 - z^6
-# f = w^3 + x^3 +y^3 - z^3 - w*x*z+2*y*z^2
+f = w^3 + x^3 +y^3 - z^3 - w*x*z+2*y*z^2
 # f = x^4 + y^4 + z^4 + w^4 - w * x * y *z
 # f = -w^4-w^3*x-w^2*x^2-x^4-w^3*y-w^2*x*y-w*x^2*y+x^3*y+w^2*y^2+w*x*y^2+x^2*y^2-w*y^3+y^4+w^3*z-w^2*x*z-x^3*z-w^2*y*z+w*x*y*z-w*y^2*z+x*y^2*z-w^2*z^2-x^2*z^2-w*y*z^2+x*y*z^2-y^2*z^2+y*z^3+z^4
 # f= 2*x_0^3+2*x_0*x_1^2+x_1^3+2*x_0^2*x_2-x_0*x_1*x_2+2*x_1^2*x_2+x_0*x_2^2+2*x_1*x_2^2+x_2^3-x_0^2*x_3-x_0*x_1*x_3-x_0*x_2*x_3+x_1*x_2*x_3+2*x_2^2*x_3+x_0*x_3^2-x_1*x_3^2-x_2*x_3^2+2*x_0^2*x_4+2*x_0*x_1*x_4-x_1^2*x_4-2*x_0*x_2*x_4-x_1*x_2*x_4+2*x_2^2*x_4+x_0*x_4^2-x_1*x_4^2-2*x_2*x_4^2
@@ -53,11 +53,11 @@ xJ = R.quotient(xI)
 
 
 # todo: check smoothness via polytope considerations?
-# if DEBUG:
-#     r = str(R.gens()).replace('(','').replace(')','').replace(' ','').split(',')
-#     X = toric_varieties.WP(weights, base_ring = GF(p), names = r)
-#     assert(X.subscheme(f).is_smooth())
-#     print("X is smooth")
+if DEBUG:
+    r = str(R.gens()).replace('(','').replace(')','').replace(' ','').split(',')
+    X = toric_varieties.WP(weights, base_ring = GF(p), names = r)
+    assert(X.subscheme(f).is_smooth())
+    print("X is smooth")
 
 # d = f.degree()
 # fdegree = d
@@ -190,15 +190,56 @@ def lift_poly(g):
             summer[i] += c*monomial_lift[i]
     return summer
 
+# break up h into chunks of monomials in connected components
+# for now, just rule out the ones with no neighbors
+def to_uvg_helper(h):
+    hdict = h.dict()
+    hdict_keys = hdict.keys()
+    keys_to_pop = set()
+    return_list = []
+
+    degrees = set([degree_vector(a) for a in hdict_keys])
+    for deg in degrees:
+        mon_keys = set([a for a in hdict_keys if degree_vector(a) == deg])
+
+
+        for h in mon_keys:
+            KEEP_GOING = True # necessary?
+            for h2 in mon_keys:
+                
+                # no other monomials could share a factor with h
+                if KEEP_GOING and sum([degree_vector([min(h[i],h2[i]) for i in range(n)]) >= deg - (n- 1)]) == 1:
+                    keys_to_pop.add(h)
+                    
+                    for v in Pn_minus_1_pts:
+                        if all([h[i]>=v[i] for i in range(n)]):
+                            if KEEP_GOING:
+                                return_list.append([[h[i]-v[i] for i in range(n)], hdict[h]*vector_to_monomial(v)])
+                            KEEP_GOING = False
+                            break
+                    KEEP_GOING = False
+
+    # print(hdict)
+    for _ in keys_to_pop:
+        hdict.pop(_)
+    # print(hdict)
+    
+
+    return hdict,return_list
+
+
 # given frob(g) = h, return a minimal set of elements of form [u,g] such that h = sum(x^u * g)
 def to_uvg(h):
+
     print("beginning to_uvg")
-    hdict = h.dict()
+    hdict, return_list = to_uvg_helper(h)
+    # return_list = []
+    # hdict = h.dict()
     hdict_keys = hdict.keys()
 
     degrees = set([degree_vector(a) for a in hdict_keys])
 
-    return_list = []
+    
     # I think this might be badly recursive but should ultimately save matrix multiplications
 
     # first stratify by degrees
@@ -223,7 +264,7 @@ def to_uvg(h):
                         # if not tuple(u) in u_checked:
                         
                         # now check how many elements in mon_keys are divisible by u
-                        div_count = len([0 for a in mon_keys if all([a[i]>=u[i] for i in range(n)])])
+                        div_count = len([0 for a in mon_keys if all([a[i]>=u[i] for i in range(n)]) and degree_vector([a[i]-u[i] for i in range(n)])>0])
                         if div_count > div_count_record:
                             div_count_record = div_count
                             u_record = u
