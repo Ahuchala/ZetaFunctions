@@ -82,7 +82,7 @@ num_poly = 1
 # x_vars = list('x_%d' % i for i in range(n))
 # y_vars = list('y_%d' % i for i in range(num_poly))
 p = 7
-prec = 2
+prec = 3
 
 R.<x_0,x_1,x_2,y_0> = QQ[]
 
@@ -146,6 +146,10 @@ def to_pn_minus_1_basis(g):
         return_vec[ind] = g.monomial_coefficient(monomial)
     return return_vec
 
+def from_pn_minus_1_basis(g_vec):
+    return sum([g_vec[i] * Pn_minus_1[i] for i in range(size_pn_minus_1)])
+
+
 def monomial_degree(m):
 #   e looks like  [(1, 1, 1, 1, 1)]
     e = m.exponents()[0]
@@ -174,7 +178,7 @@ def frobenius(g,prec=2):
 #         cacheing may be appropriate
         numer = binomial(-d,j) * binomial(d+prec-1,d+j) * sigma_g*sigma(fj)
         summer += numer
-        fj *= f
+        fj *= F
     return summer
 
 
@@ -271,9 +275,9 @@ def reduce_griffiths_dwork(u,g):
         v = best_v
         k = best_k
         # todo: check this
-        # if degree_vector([u[i] - k*v[i] for i in range(n+num_poly)]) == 0:
+        if pole_order(vector_to_monomial([u[i] - k*v[i] for i in range(n+num_poly)])) == 0:
             # print("error: overcounted")
-            # k -= 1
+            k -= 1
         # print(u,v,k)
 
         if not tuple(v) in Ruv_u_dict.keys():
@@ -305,7 +309,7 @@ for i in range(len(B)):
         print(u,g)
         # todo: can deduce degree u
         # todo: can just keep track of denom as (denom % p^prec) * p^something
-        denom = factorial(pole_order(vector_to_monomial(u))-1+n+num_poly)
+        denom = factorial(pole_order(vector_to_monomial(u))-1+n)
 
         # this is the slow step
         u,g = reduce_griffiths_dwork(u,g)
@@ -318,7 +322,7 @@ for i in range(len(B)):
     monomial_list = [R(h.monomial_coefficient(monomial)) * monomial for monomial in h.monomials()]
     while len(monomial_list) > 0:
         term  = monomial_list.pop()
-        if term not in QQ:
+        if term not in QQ:  
             if len(term.monomials())>1:
                 print('error: too many terms')
             monomial = R(term.monomials()[0])
@@ -341,3 +345,17 @@ for i in range(len(B)):
         frob_matrix[i][j] = summer.monomial_coefficient(R(B[j])) #% p^prec
         
     print(B[i],summer)
+
+if all([all([a.ord(p)>=0 for a in b]) for b in frob_matrix]):
+    frob_matrix = [[a % p^ prec for a in b] for b in frob_matrix]
+    print(frob_matrix)
+else:
+    print("Warning: non-invertible elements encountered")
+frob_matrix = matrix(frob_matrix)
+
+poly = R(frob_matrix.characteristic_polynomial())
+print(poly)
+
+# todo: mod these based on weil conjectures
+poly = sum([(poly.monomial_coefficient(mono) % p^(prec) )* mono if (poly.monomial_coefficient(mono)% p^prec) < (p^prec)//2 else (-p^(prec)+poly.monomial_coefficient(mono)% p^prec)*mono for mono in poly.monomials()])
+print(poly)

@@ -244,6 +244,7 @@ def reduce_griffiths_dwork(u,g):
     g_vec = vector(matrix(to_pn_minus_1_basis(g)))
     # todo: speed up!
     while (u not in P1_pts):
+        print(u)
         best_k = -1
         best_v = -1
         for v in P1_pts:
