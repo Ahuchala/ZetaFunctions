@@ -107,8 +107,8 @@ y_vars = gens[n:]
 
 # J_p,m consists of p copies of y_i and sum_d_i copies of x_j
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
-f = (7/4)*x_0^2+(6/7)*x_0*x_1+x_1^2+(1/5)*x_0*x_2+(3/10)*x_1*x_2+(3/8)*x_2^2+x_0*x_3+(3/2)*x_1*x_3+(3/2)*x_2*x_3+(2/5)*x_3^2
-g = (3/5)*x_0^2+(3/7)*x_0*x_1+(9/7)*x_1^2+(1/7)*x_0*x_2+(7/6)*x_1*x_2+4*x_2^2+2*x_0*x_3+(7/6)*x_1*x_3+(1/4)*x_2*x_3+(3/4)*x_3^2
+# f = (7/4)*x_0^2+(6/7)*x_0*x_1+x_1^2+(1/5)*x_0*x_2+(3/10)*x_1*x_2+(3/8)*x_2^2+x_0*x_3+(3/2)*x_1*x_3+(3/2)*x_2*x_3+(2/5)*x_3^2
+# g = (3/5)*x_0^2+(3/7)*x_0*x_1+(9/7)*x_1^2+(1/7)*x_0*x_2+(7/6)*x_1*x_2+4*x_2^2+2*x_0*x_3+(7/6)*x_1*x_3+(1/4)*x_2*x_3+(3/4)*x_3^2
 
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2
 # f = (5/4)*x_0^2+(3/7)*x_0*x_1+(2/3)*x_1^2+4*x_0*x_2+x_1*x_2+(2/3)*x_2^2+(1/5)*x_0*x_3+(1/7)*x_1*x_3+x_2*x_3+5*x_3^2+(3/2)*x_0*x_4+(3/4)*x_1*x_4+x_2*x_4+(1/2)*x_3*x_4+(1/2)*x_4^2
@@ -331,7 +331,7 @@ for i in range(len(B)):
         print(u,g)
         # todo: can deduce degree u
         # todo: can just keep track of denom as (denom % p^prec) * p^something
-        denom = factorial(pole_order(vector_to_monomial(u))-1+n)
+        denom = factorial(pole_order(vector_to_monomial(u))-1+n+num_poly)
 
         # this is the slow step
         u,g = reduce_griffiths_dwork(u,g)
