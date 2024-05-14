@@ -112,7 +112,6 @@ poly_list = [f]
 
 
 
-# poly_list = [f]
 d = [_.degree() for _ in poly_list]
 m = sum([f.degree() for f in poly_list]) - n #- 1
 
@@ -122,44 +121,19 @@ F = sum([y_vars[i] * poly_list[i] for i in range(num_poly)])
 # assert R.ideal([F.derivative(_) for _ in gens(R)]).ngens() == n + num_poly
 
 
-I  = F.jacobian_ideal()
+I = F.jacobian_ideal()
 J = R.quotient_ring(I)
 
 # xI = R.ideal([_*F.derivative(_) for _ in R.gens()])# + [f])
 # xJ = R.quotient(xI)
 
 # toString basis({i,0},R)
-P_0_mons = [R(1)]
-# P_1_mons = [x_0^2*y_0, x_0^2*y_1, x_0*x_1*y_0, x_0*x_1*y_1, x_0*x_2*y_0, x_0*x_2*y_1, x_0*x_3*y_0, x_0*x_3*y_1,x_1^2*y_0, x_1^2*y_1, x_1*x_2*y_0, x_1*x_2*y_1, x_1*x_3*y_0, x_1*x_3*y_1, x_2^2*y_0, x_2^2*y_1, x_2*x_3*y_0,x_2*x_3*y_1, x_3^2*y_0, x_3^2*y_1]
-# P_2_mons = [x_0^4*y_0^2, x_0^4*y_0*y_1, x_0^4*y_1^2, x_0^3*x_1*y_0^2, x_0^3*x_1*y_0*y_1, x_0^3*x_1*y_1^2,x_0^3*x_2*y_0^2, x_0^3*x_2*y_0*y_1, x_0^3*x_2*y_1^2, x_0^3*x_3*y_0^2, x_0^3*x_3*y_0*y_1, x_0^3*x_3*y_1^2,x_0^2*x_1^2*y_0^2, x_0^2*x_1^2*y_0*y_1, x_0^2*x_1^2*y_1^2, x_0^2*x_1*x_2*y_0^2, x_0^2*x_1*x_2*y_0*y_1,x_0^2*x_1*x_2*y_1^2, x_0^2*x_1*x_3*y_0^2, x_0^2*x_1*x_3*y_0*y_1, x_0^2*x_1*x_3*y_1^2, x_0^2*x_2^2*y_0^2,x_0^2*x_2^2*y_0*y_1, x_0^2*x_2^2*y_1^2, x_0^2*x_2*x_3*y_0^2, x_0^2*x_2*x_3*y_0*y_1, x_0^2*x_2*x_3*y_1^2,x_0^2*x_3^2*y_0^2, x_0^2*x_3^2*y_0*y_1, x_0^2*x_3^2*y_1^2, x_0*x_1^3*y_0^2, x_0*x_1^3*y_0*y_1, x_0*x_1^3*y_1^2,x_0*x_1^2*x_2*y_0^2, x_0*x_1^2*x_2*y_0*y_1, x_0*x_1^2*x_2*y_1^2, x_0*x_1^2*x_3*y_0^2, x_0*x_1^2*x_3*y_0*y_1,x_0*x_1^2*x_3*y_1^2, x_0*x_1*x_2^2*y_0^2, x_0*x_1*x_2^2*y_0*y_1, x_0*x_1*x_2^2*y_1^2, x_0*x_1*x_2*x_3*y_0^2,x_0*x_1*x_2*x_3*y_0*y_1, x_0*x_1*x_2*x_3*y_1^2, x_0*x_1*x_3^2*y_0^2, x_0*x_1*x_3^2*y_0*y_1, x_0*x_1*x_3^2*y_1^2,x_0*x_2^3*y_0^2, x_0*x_2^3*y_0*y_1, x_0*x_2^3*y_1^2, x_0*x_2^2*x_3*y_0^2, x_0*x_2^2*x_3*y_0*y_1,x_0*x_2^2*x_3*y_1^2, x_0*x_2*x_3^2*y_0^2, x_0*x_2*x_3^2*y_0*y_1, x_0*x_2*x_3^2*y_1^2, x_0*x_3^3*y_0^2,x_0*x_3^3*y_0*y_1, x_0*x_3^3*y_1^2, x_1^4*y_0^2, x_1^4*y_0*y_1, x_1^4*y_1^2, x_1^3*x_2*y_0^2, x_1^3*x_2*y_0*y_1,x_1^3*x_2*y_1^2, x_1^3*x_3*y_0^2, x_1^3*x_3*y_0*y_1, x_1^3*x_3*y_1^2, x_1^2*x_2^2*y_0^2, x_1^2*x_2^2*y_0*y_1,x_1^2*x_2^2*y_1^2, x_1^2*x_2*x_3*y_0^2, x_1^2*x_2*x_3*y_0*y_1, x_1^2*x_2*x_3*y_1^2, x_1^2*x_3^2*y_0^2,x_1^2*x_3^2*y_0*y_1, x_1^2*x_3^2*y_1^2, x_1*x_2^3*y_0^2, x_1*x_2^3*y_0*y_1, x_1*x_2^3*y_1^2, x_1*x_2^2*x_3*y_0^2,x_1*x_2^2*x_3*y_0*y_1, x_1*x_2^2*x_3*y_1^2, x_1*x_2*x_3^2*y_0^2, x_1*x_2*x_3^2*y_0*y_1, x_1*x_2*x_3^2*y_1^2,x_1*x_3^3*y_0^2, x_1*x_3^3*y_0*y_1, x_1*x_3^3*y_1^2, x_2^4*y_0^2, x_2^4*y_0*y_1, x_2^4*y_1^2, x_2^3*x_3*y_0^2,x_2^3*x_3*y_0*y_1, x_2^3*x_3*y_1^2, x_2^2*x_3^2*y_0^2, x_2^2*x_3^2*y_0*y_1, x_2^2*x_3^2*y_1^2, x_2*x_3^3*y_0^2,x_2*x_3^3*y_0*y_1, x_2*x_3^3*y_1^2, x_3^4*y_0^2, x_3^4*y_0*y_1, x_3^4*y_1^2]
-P_1_mons = [x_0^3*y_0, x_0^2*x_1*y_0, x_0^2*x_2*y_0, x_0*x_1^2*y_0, x_0*x_1*x_2*y_0, x_0*x_2^2*y_0, x_1^3*y_0,x_1^2*x_2*y_0, x_1*x_2^2*y_0, x_2^3*y_0]
-P_2_mons = [x_0^6*y_0^2, x_0^5*x_1*y_0^2, x_0^5*x_2*y_0^2, x_0^4*x_1^2*y_0^2, x_0^4*x_1*x_2*y_0^2, x_0^4*x_2^2*y_0^2,x_0^3*x_1^3*y_0^2, x_0^3*x_1^2*x_2*y_0^2, x_0^3*x_1*x_2^2*y_0^2, x_0^3*x_2^3*y_0^2, x_0^2*x_1^4*y_0^2, x_0^2*x_1^3*x_2*y_0^2, x_0^2*x_1^2*x_2^2*y_0^2, x_0^2*x_1*x_2^3*y_0^2, x_0^2*x_2^4*y_0^2, x_0*x_1^5*y_0^2, x_0*x_1^4*x_2*y_0^2, x_0*x_1^3*x_2^2*y_0^2, x_0*x_1^2*x_2^3*y_0^2, x_0*x_1*x_2^4*y_0^2, x_0*x_2^5*y_0^2, x_1^6*y_0^2, x_1^5*x_2*y_0^2, x_1^4*x_2^2*y_0^2, x_1^3*x_2^3*y_0^2, x_1^2*x_2^4*y_0^2, x_1*x_2^5*y_0^2,x_2^6*y_0^2]
-
 
 def monomial_to_vector(m):
     return list(m.exponents()[0])
 
 def vector_to_monomial(v):
     return prod([gens[i]^v[i] for i in range(n+num_poly)])
-
-P_0_pts = [monomial_to_vector(_) for _ in P_0_mons]
-P_1_pts = [monomial_to_vector(_) for _ in P_1_mons]
-P_2_pts = [monomial_to_vector(_) for _ in P_2_mons]
-
-
-Pn_minus_1 = P_2_mons
-Pn_minus_1_pts = P_2_pts
-size_pn_minus_1 = len(Pn_minus_1_pts)
-
-def to_pn_minus_1_basis(g):
-    return_vec = size_pn_minus_1 * [0]
-    for monomial in g.monomials():
-        ind = Pn_minus_1.index(monomial)
-        return_vec[ind] = g.monomial_coefficient(monomial)
-    return return_vec
-
-def from_pn_minus_1_basis(g_vec):
-    return sum([g_vec[i] * Pn_minus_1[i] for i in range(size_pn_minus_1)])
 
 
 def monomial_degree(m):
@@ -188,7 +162,7 @@ def frobenius(g,prec=2):
     fj = R(1)
     for j in range(prec):
 #         cacheing may be appropriate
-        numer = binomial(-d,j) * binomial(d+prec-1,d+j) * sigma_g*sigma(fj)
+        numer = binomial(-d,j) * binomial(d+prec-1,d+j) * sigma_g*sigma(fj) / factorial(pole_order(sigma_g) + pole_order(sigma(fj))-1)
         summer += numer
         fj *= F
     return summer
@@ -223,7 +197,7 @@ for i in range(len(B)):
                     r = monomial - q
                     l = r.lift(I)
                     temp = sum([l[i].derivative(gens[i]) for i in range(n+num_poly)])
-                    reduction_dict[monomial] = temp/max(1,pole_order(monomial)-1) + q
+                    reduction_dict[monomial] = temp + q
                 result = term.monomial_coefficient(monomial)* reduction_dict[monomial]
                 # result = sum([_*term.monomial_coefficient(monomial) * result.monomial_coefficient(_) for _ in result.monomials()])
                 for _ in result.monomials():
@@ -232,13 +206,13 @@ for i in range(len(B)):
                 monomial_list = [R(h.monomial_coefficient(monomial)) * monomial for monomial in h.monomials()]
                 
             else:
-                summer += term.monomial_coefficient(monomial) * monomial
+                summer += term
     #             print(term)
         else:
             summer += term
     
     for j in range(len(B)):
-        frob_matrix[i][j] = summer.monomial_coefficient(R(B[j])) #% p^prec
+        frob_matrix[i][j] = summer.monomial_coefficient(R(B[j])) * factorial(pole_order(B[j])) #% p^prec
         
     print(B[i],summer)
 
