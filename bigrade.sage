@@ -78,18 +78,18 @@ import itertools
 
 
 # number of variables
-n = 3
+n = 4
 
 # number of hypersurfaces in complete intersection
 
-num_poly = 1
+num_poly = 2
 
 p = 7
 prec = 2
 
 
-R.<x_0,x_1,x_2,y_0> = QQ[]
-# R.<x_0,x_1,x_2,x_3,y_0,y_1> = QQ[]
+# R.<x_0,x_1,x_2,y_0> = QQ[]
+R.<x_0,x_1,x_2,x_3,y_0,y_1> = QQ[]
 
 gens = R.gens()
 
@@ -99,16 +99,18 @@ y_vars = gens[n:]
 # J_p,m consists of p copies of y_i and sum_d_i copies of x_j
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
-f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2
-# f = x_0^2 + x_1^2 + x_2^2 + x_3^2
-# g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+# f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2
+f = x_0^2 + x_1^2 + x_2^2 + x_3^2
+g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+# smooth mod 5,7,11,13,17,19,23
+# not 2,3
 
-B = [R(1), x_2^3*y_0] # need to be careful to use a basis sage likes
-# B = [R(1), x_3^2*y_1]
+# B = [R(1), x_2^3*y_0] # need to be careful to use a basis sage likes
+B = [R(1), x_3^2*y_1]
 
-poly_list = [f]
-# f_0 = f; f_1 = g;
-# poly_list = [f_0,f_1]
+# poly_list = [f]
+f_0 = f; f_1 = g;
+poly_list = [f_0,f_1]
 
 
 
@@ -200,9 +202,9 @@ for i in range(len(B)):
                     reduction_dict[monomial] = temp + q
                 result = term.monomial_coefficient(monomial)* reduction_dict[monomial]
                 # result = sum([_*term.monomial_coefficient(monomial) * result.monomial_coefficient(_) for _ in result.monomials()])
-                for _ in result.monomials():
-                    monomial_list.append(_ * result.monomial_coefficient(_))
-                h = sum(monomial_list)
+                # for _ in result.monomials():
+                    # monomial_list.append(_ * result.monomial_coefficient(_))
+                h = sum(monomial_list) + result
                 monomial_list = [R(h.monomial_coefficient(monomial)) * monomial for monomial in h.monomials()]
                 
             else:
@@ -212,9 +214,10 @@ for i in range(len(B)):
             summer += term
     
     for j in range(len(B)):
-        frob_matrix[i][j] = summer.monomial_coefficient(R(B[j])) * factorial(pole_order(B[j])) #% p^prec
+        frob_matrix[i][j] = summer.monomial_coefficient(R(B[j])) * factorial(pole_order(B[j])+1) #% p^prec
         
     print(B[i],summer)
+    # assert summer == sum([frob_matrix[i][_]*B[_] for _ in range(len(B))])
 
 if all([all([a.ord(p)>=0 for a in b]) for b in frob_matrix]):
     frob_matrix = [[a % p^ prec for a in b] for b in frob_matrix]
@@ -229,3 +232,4 @@ print(poly)
 # todo: mod these based on weil conjectures
 poly = sum([(poly.monomial_coefficient(mono) % p^(prec) )* mono if (poly.monomial_coefficient(mono)% p^prec) < (p^prec)//2 else (-p^(prec)+poly.monomial_coefficient(mono)% p^prec)*mono for mono in poly.monomials()])
 print(poly)
+print(p)
