@@ -78,18 +78,18 @@ import itertools
 
 
 # number of variables
-n = 4
+n = 5
 
 # number of hypersurfaces in complete intersection
 
 num_poly = 2
 
-p = 7
-prec = 2
+p = 5
+prec = 1
 
 
 # R.<x_0,x_1,x_2,y_0> = QQ[]
-R.<x_0,x_1,x_2,x_3,y_0,y_1> = QQ[]
+R.<x_0,x_1,x_2,x_3,x_4,y_0,y_1> = QQ[]
 
 gens = R.gens()
 
@@ -100,13 +100,18 @@ y_vars = gens[n:]
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2
-f = x_0^2 + x_1^2 + x_2^2 + x_3^2
-g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+# f = x_0^2 + x_1^2 + x_2^2 + x_3^2
+# g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # smooth mod 5,7,11,13,17,19,23
 # not 2,3
 
+f = x_0^2+2*x_0*x_1+2*x_1^2-x_0*x_2+x_1*x_2-2*x_0*x_3-x_1*x_3+2*x_2*x_3-2*x_3^2+x_0*x_4+2*x_2*x_4+2*x_3*x_4
+g = -2*x_0^3-2*x_0^2*x_1+x_0*x_1^2-x_1^3+2*x_0^2*x_2-x_0*x_1*x_2-2*x_1^2*x_2-2*x_1*x_2^2+x_0^2*x_3+2*x_0*x_1*x_3+2*x_1^2*x_3+2*x_0*x_2*x_3-x_1*x_2*x_3+x_0*x_3^2+x_2*x_3^2-x_0^2*x_4+2*x_1^2*x_4-2*x_0*x_2*x_4+x_1*x_2*x_4-2*x_2^2*x_4-2*x_2*x_3*x_4+2*x_0*x_4^2-x_2*x_4^2-2*x_4^3
+
+
 # B = [R(1), x_2^3*y_0] # need to be careful to use a basis sage likes
-B = [R(1), x_3^2*y_1]
+# B = [R(1), x_3^2*y_1]
+B = [R(1),x_0*x_1*x_4*y_1, x_0*x_2*x_4*y_1, x_0*x_3^2*y_1, x_0*x_3*x_4*y_1, x_0*x_4^2*y_1, x_1^2*x_4*y_1,x_1*x_2*x_4*y_1, x_1*x_3^2*y_1, x_1*x_3*x_4*y_1, x_1*x_4^2*y_1, x_2^2*x_3*y_1, x_2^2*x_4*y_1, x_2*x_3^2*y_1,x_2*x_3*x_4*y_1, x_2*x_4^2*y_1, x_3^3*y_1, x_3^2*x_4*y_1, x_3*x_4^2*y_1, x_4^3*y_1,x_4^6*y_1^2]
 
 # poly_list = [f]
 f_0 = f; f_1 = g;
