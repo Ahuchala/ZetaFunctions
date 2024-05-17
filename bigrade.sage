@@ -84,10 +84,11 @@ import itertools
 
 num_poly = 2
 
-p = 5
+p = 7
 prec = 2
 
 
+# R.<x_0,x_1,x_2,y_1> = QQ[]
 R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2> = QQ[]
 
@@ -165,7 +166,7 @@ s = s[:-1]
 s += ";"
 s += "J = R/ideal jacobian F;"
 # s += "for p from 0 to " + str(n+2) + " list hilbertFunction({p,"  + str(m) + "}, J);"
-s += "for i from 0 to " + str(n-2) + " list toString basis({i,"  + str(m) + "}, J);"
+s += "for i from 0 to " + str(n-num_poly) + " list toString basis({i,"  + str(m) + "}, J);"
 s = s[:-1]
 t = str(macaulay2(s))
 t = t.replace("{","").replace("}","").replace("^","**").replace(" ","").split("matrix")[1:]
@@ -265,7 +266,7 @@ for i in range(len(B)):
             summer += term
     
     for j in range(len(B)):
-        frob_matrix[i][j] = summer.monomial_coefficient(R(B[j])) * factorial(pole_order(B[j])+1) #% p^prec
+        frob_matrix[i][j] = summer.monomial_coefficient(R(B[j])) * factorial(pole_order(B[j])+num_poly -1) #% p^prec
         
     print(B[i],summer)
     # assert summer == sum([frob_matrix[i][_]*B[_] for _ in range(len(B))])
