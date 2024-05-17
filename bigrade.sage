@@ -78,21 +78,22 @@ import itertools
 
 
 # number of variables - 1
-n = 3
+# n = 3
 
 # number of hypersurfaces in complete intersection
 
 num_poly = 2
 
-p = 7
+p = 5
 prec = 2
 
 
-R.<x_0,x_1,x_2,x_3,y_0,y_1> = QQ[]
-# R.<x_0,x_1,x_2,x_3,x_4,y_0,y_1> = QQ[]
+R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+# R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2> = QQ[]
 
 gens = R.gens()
-assert len(gens) == num_poly + n+1
+n = len(gens) - num_poly-1
+# assert len(gens) == num_poly + n+1
 
 x_vars = gens[:n+1]
 y_vars = gens[n+1:]
@@ -113,43 +114,73 @@ g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 
 
 # B = [R(1), x_2^3*y_0] # need to be careful to use a basis sage likes
-B = [R(1), x_3^2*y_1]
+# B = [R(1), x_3^2*y_1]
 # B = [R(1),x_0*x_1*x_4*y_1, x_0*x_2*x_4*y_1, x_0*x_3^2*y_1, x_0*x_3*x_4*y_1, x_0*x_4^2*y_1, x_1^2*x_4*y_1,x_1*x_2*x_4*y_1, x_1*x_3^2*y_1, x_1*x_3*x_4*y_1, x_1*x_4^2*y_1, x_2^2*x_3*y_1, x_2^2*x_4*y_1, x_2*x_3^2*y_1,x_2*x_3*x_4*y_1, x_2*x_4^2*y_1, x_3^3*y_1, x_3^2*x_4*y_1, x_3*x_4^2*y_1, x_4^3*y_1,x_4^6*y_1^2]
 
 # poly_list = [f]
 f_0 = f; f_1 = g;
 poly_list = [f_0,f_1]
 
-
-# R = QQ[x_0..x_3,y_0,y_1, Degrees=>{4:{0,1},{1,-2},{1,-2}}]
-# f = x_0^2 + 2*x_1^2 - x_2^2 + 7*x_3^2
-# g = x_0*x_1 + 2*x_0*x_2 - 4*x_1*x_3+x_2^2
-# F = y_0 * f + y_1 * g
-# J = R/ideal jacobian F
-# for p from 0 to 5 list hilbertFunction({p,0}, J)
-# basis({0,0}, J)
-# basis({1,0}, J)
-# basis({2,0}, J)
-
-
-
-
 d = [_.degree() for _ in poly_list]
 m = sum([f.degree() for f in poly_list]) - n - 1
 
 F = sum([y_vars[i] * poly_list[i] for i in range(num_poly)])
 
-# smoothness check
-# assert R.ideal([F.derivative(_) for _ in gens(R)]).ngens() == n + num_poly
+# Macaulay2 code to check smoothness
+
+# k = ZZ/2
+# R = k[x_0..x_5]
+# f = x_0^3 + x_1*x_2^2 + x_2^3 + x_0^2*x_3 + x_0*x_1*x_3 + 4*x_1*x_2*x_3 + x_0^2*x_4 + x_1^2*x_4 + 8*x_0*x_2*x_4 + x_2^2*x_4 + 4*x_2*x_3*x_4 + x_3^2*x_4 + x_1*x_4^2 + x_2*x_4^2 + x_4^3 + 4*x_0*x_1*x_5 + x_1*x_2*x_5 + 2*x_1*x_3*x_5 + 2*x_2*x_3*x_5 + 4*x_0*x_4*x_5 + x_1*x_4*x_5 + 6*x_3*x_4*x_5 + x_4^2*x_5 + x_0*x_5^2 + x_2*x_5^2 + x_3*x_5^2 + x_4*x_5^2
+# I = ideal(f)
+# J = I + minors(2, jacobian I)
+# saturate J -- if this is ideal 1 then you've got a smooth c.i.
+
+s = "k = ZZ/" + str(p) + ";"
+s += "R = k[x_0..x_" + str(n) +"];"
+s += "I = ideal ("
+for pol in poly_list:
+	s += str(pol) + ","
+s = s[:-1]
+s += ");"
+
+s += "J = I + minors(" + str(num_poly) + ", jacobian I);"
+s += "saturate J == R"
+t = str(macaulay2(s))
+if t[0] == "f": # t == "false"
+	print("Warning: F not smooth modulo " + str(p))
+	assert False
+
+
+# Macaulay2 code to run to compute Griffiths ring
+s = "R = QQ[x_0..x_" + str(n) + ",y_1..y_" + str(num_poly)
+s += ", Degrees=>{" + str(n+1) + ":{0,1},"
+for i in range(num_poly):
+	s += "{1,-" + str(d[i]) + "},"
+s = s[:-1]
+s += "}];"
+s += "F = "
+for i in range(num_poly):
+	s += "y_" + str(i+1) + "*(" + str(poly_list[i]) + ")+"
+s = s[:-1]
+s += ";"
+s += "J = R/ideal jacobian F;"
+# s += "for p from 0 to " + str(n+2) + " list hilbertFunction({p,"  + str(m) + "}, J);"
+s += "for i from 0 to " + str(n-2) + " list toString basis({i,"  + str(m) + "}, J);"
+s = s[:-1]
+t = str(macaulay2(s))
+t = t.replace("{","").replace("}","").replace("^","**").replace(" ","").split("matrix")[1:]
+t = "".join(t).split(",")
+B = []
+for _ in t:
+	eval("B.append(R(" + _ +"))")
+print(B)
+
+# todo: go ahead and convert this into a basis sage likes
 
 
 I = F.jacobian_ideal()
 J = R.quotient_ring(I)
 
-# xI = R.ideal([_*F.derivative(_) for _ in R.gens()])# + [f])
-# xJ = R.quotient(xI)
-
-# toString basis({i,0},R)
 
 def monomial_to_vector(m):
     return list(m.exponents()[0])
