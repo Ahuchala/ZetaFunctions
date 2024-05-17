@@ -44,6 +44,26 @@ import itertools
 # basis({2,0}, J)
 
 
+# R = QQ[x_0..x_3,y_0, Degrees=>{4:{0,1},{1,-4}}]
+# f = x_0^4+x_0^3*x_1+x_0*x_1^3+x_0^2*x_1*x_2+x_0*x_1^2*x_2+x_1^3*x_2+x_0^2*x_2^2+x_0*x_2^3+x_1*x_2^3+x_0*x_1*x_2*x_3+x_2^3*x_3+x_0^2*x_3^2+x_0*x_1*x_3^2+x_1*x_2*x_3^2+x_0*x_3^3+x_1*x_3^3+x_2*x_3^3
+# F = y_0 * f
+# J = R/ideal jacobian F
+# for p from 0 to 5 list hilbertFunction({p,0}, J)
+# basis({0,0}, J)
+# basis({1,0}, J)
+# basis({2,0}, J)
+
+
+
+# R = QQ[x_0..x_3,y_0, Degrees=>{4:{0,1},{1,-2}}]
+# f = x_0*x_1 + x_2*x_3
+# F = y_0 * f
+# J = R/ideal jacobian F
+# for p from 0 to 5 list hilbertFunction({p,-2}, J)
+# basis({0,-2}, J)
+# basis({1,-2}, J)
+# basis({2,-2}, J)
+
 # Nick's Macaulay2 code
 # R = QQ[x_0..x_4,y_0,y_1, Degrees=>{5:{0,1},{1,-2},{1,-3}}]
 # f = random({1,0}, R)
@@ -54,7 +74,7 @@ import itertools
 # basis({2,0}, J)
 
 
-
+# f = x_0^3+x_2^3+x_0^2*x_3+x_0^2*x_4+x_2^2*x_4+x_3^2*x_4+x_2*x_4^2+x_4^3+x_4^2*x_5+x_0*x_5^2+x_2*x_5^2+x_3*x_5^2+x_4*x_5^2
 
 
 # poly_list = list(var('f_%d' % i) for i in range(num_poly))
@@ -78,19 +98,19 @@ import itertools
 
 
 # number of variables
-n = 3
+n = 4
 
 # number of hypersurfaces in complete intersection
 
-num_poly = 1
+num_poly = 2
 
 p = 2
 prec = 4
 
 
-R.<x_0,x_1,x_2,y_0> = QQ[]
+R.<x_0,x_1,x_2,x_3,y_0> = QQ[]
 # R.<x_0,x_1,x_2,x_3,y_0,y_1> = QQ[]
-# R.<x_0,x_1,x_2,x_3,x_4,y_0,y_1> = QQ[]
+# R.<x_0,x_1,x_2,x_3,x_4,x_5,y_0> = QQ[]
 
 gens = R.gens()
 
@@ -106,16 +126,24 @@ y_vars = gens[n:]
 # smooth mod 5,7,11,13,17,19,23
 # not 2,3
 
-
-f = x_0^2*x_1+x_1^3+x_0*x_1*x_2+x_1*x_2^2+x_2^3
+f = x_0^2 + x_0*x_1 + x_1^2 + x_2*x_3
+g = x_0*x_1 + x_2*x_3
+# f = x_0^2*x_1+x_1^3+x_0*x_1*x_2+x_1*x_2^2+x_2^3
 # f = x_0^2+2*x_0*x_1+2*x_1^2-x_0*x_2+x_1*x_2-2*x_0*x_3-x_1*x_3+2*x_2*x_3-2*x_3^2+x_0*x_4+2*x_2*x_4+2*x_3*x_4
 # g = -2*x_0^3-2*x_0^2*x_1+x_0*x_1^2-x_1^3+2*x_0^2*x_2-x_0*x_1*x_2-2*x_1^2*x_2-2*x_1*x_2^2+x_0^2*x_3+2*x_0*x_1*x_3+2*x_1^2*x_3+2*x_0*x_2*x_3-x_1*x_2*x_3+x_0*x_3^2+x_2*x_3^2-x_0^2*x_4+2*x_1^2*x_4-2*x_0*x_2*x_4+x_1*x_2*x_4-2*x_2^2*x_4-2*x_2*x_3*x_4+2*x_0*x_4^2-x_2*x_4^2-2*x_4^3
 
+# f =  x_0^3 + x_1*x_2^2 + x_2^3 + x_0^2*x_3 + x_0*x_1*x_3 + x_0^2*x_4 + x_1^2*x_4 + x_2^2*x_4 + x_3^2*x_4 + x_1*x_4^2 + x_2*x_4^2 + x_4^3 + x_1*x_2*x_5 + x_1*x_4*x_5 + x_4^2*x_5 + x_0*x_5^2 + x_2*x_5^2 + x_3*x_5^2 + x_4*x_5^2
+# f = x_0^4+x_0^3*x_1+x_0*x_1^3+x_0^2*x_1*x_2+x_0*x_1^2*x_2+x_1^3*x_2+x_0^2*x_2^2+x_0*x_2^3+x_1*x_2^3+x_0*x_1*x_2*x_3+x_2^3*x_3+x_0^2*x_3^2+x_0*x_1*x_3^2+x_1*x_2*x_3^2+x_0*x_3^3+x_1*x_3^3+x_2*x_3^3
 
-B = [R(1), x_2^3*y_0] # need to be careful to use a basis sage likes
+B = [y_0]
+# B = [R(1), x_2^3*y_0] # need to be careful to use a basis sage likes
 # B = [R(1), x_3^2*y_1]
 # B = [R(1),x_0*x_1*x_4*y_1, x_0*x_2*x_4*y_1, x_0*x_3^2*y_1, x_0*x_3*x_4*y_1, x_0*x_4^2*y_1, x_1^2*x_4*y_1,x_1*x_2*x_4*y_1, x_1*x_3^2*y_1, x_1*x_3*x_4*y_1, x_1*x_4^2*y_1, x_2^2*x_3*y_1, x_2^2*x_4*y_1, x_2*x_3^2*y_1,x_2*x_3*x_4*y_1, x_2*x_4^2*y_1, x_3^3*y_1, x_3^2*x_4*y_1, x_3*x_4^2*y_1, x_4^3*y_1,x_4^6*y_1^2]
 # B = [R(1),x_0*x_2^2*y_0]
+# B = [R(1),x_0*x_2*x_4*y_0, x_0*x_4*x_5*y_0, x_0*x_5^2*y_0, x_1*x_3*x_4*y_0, x_1*x_4^2*y_0, x_1*x_4*x_5*y_0,x_1*x_5^2*y_0, x_2*x_3*x_4*y_0, x_2*x_3*x_5*y_0, x_2*x_4*x_5*y_0, x_2*x_5^2*y_0, x_3^2*x_4*y_0, x_3^2*x_5*y_0,x_3*x_4^2*y_0, x_3*x_4*x_5*y_0, x_3*x_5^2*y_0, x_4^3*y_0, x_4^2*x_5*y_0, x_4*x_5^2*y_0, x_5^3*y_0,x_2*x_4*x_5^4*y_0^2]
+# B = [y_0,x_0*x_2*x_4*y_0^2, x_0*x_4*x_5*y_0^2, x_0*x_5^2*y_0^2, x_1*x_3*x_4*y_0^2, x_1*x_4^2*y_0^2,x_1*x_4*x_5*y_0^2, x_1*x_5^2*y_0^2, x_2*x_3*x_4*y_0^2, x_2*x_3*x_5*y_0^2, x_2*x_4*x_5*y_0^2, x_2*x_5^2*y_0^2,x_3^2*x_4*y_0^2, x_3^2*x_5*y_0^2, x_3*x_4^2*y_0^2, x_3*x_4*x_5*y_0^2, x_3*x_5^2*y_0^2, x_4^3*y_0^2,x_4^2*x_5*y_0^2, x_4*x_5^2*y_0^2, x_5^3*y_0^2,x_5^6*y_0^3]
+# B = [x_5^6*y_0^3, x_1*x_3*x_5*y_0^2, x_2*x_4^2*y_0^2, x_3^2*x_5*y_0^2, x_1*x_5^2*y_0^2, x_5^3*y_0^2, x_4^3*y_0^2, x_0*x_2*x_5*y_0^2, x_3*x_5^2*y_0^2, x_2*x_5^2*y_0^2, x_0*x_4*x_5*y_0^2, x_3*x_4*x_5*y_0^2, x_4*x_5^2*y_0^2, x_0*x_4^2*y_0^2, x_2*x_4*x_5*y_0^2, x_3*x_4^2*y_0^2, y_0, x_1*x_4*x_5*y_0^2, x_1*x_4^2*y_0^2, x_2*x_3*x_5*y_0^2, x_0*x_5^2*y_0^2, x_4^2*x_5*y_0^2]
+# B = [R(1), x_0^2*x_2*x_3*y_0, x_0^2*x_3^2*y_0, x_0*x_1*x_3^2*y_0, x_0*x_2^3*y_0, x_0*x_2^2*x_3*y_0,x_0*x_2*x_3^2*y_0, x_0*x_3^3*y_0, x_1^3*x_3*y_0, x_1^2*x_2*x_3*y_0, x_1^2*x_3^2*y_0, x_1*x_2^3*y_0,x_1*x_2^2*x_3*y_0, x_1*x_2*x_3^2*y_0, x_1*x_3^3*y_0, x_2^4*y_0, x_2^3*x_3*y_0, x_2^2*x_3^2*y_0, x_2*x_3^3*y_0,x_3^4*y_0, x_3^8*y_0^2]
 
 
 poly_list = [f]
@@ -125,7 +153,7 @@ poly_list = [f]
 
 
 d = [_.degree() for _ in poly_list]
-m = sum([f.degree() for f in poly_list]) - n #- 1
+m = sum(d) - n
 
 F = sum([y_vars[i] * poly_list[i] for i in range(num_poly)])
 
