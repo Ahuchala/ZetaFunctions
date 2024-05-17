@@ -19,7 +19,7 @@ import itertools
 
 num_poly = 1
 
-p = 17
+p = 3
 prec = 2
 
 
@@ -58,42 +58,27 @@ m = sum([f.degree() for f in poly_list]) - n - 1
 
 F = sum([y_vars[i] * poly_list[i] for i in range(num_poly)])
 
-if not p in Primes():
-	print("Warning: "+ str(p) + " is not prime")
-	assert False
+
+assert p in Primes(), f'''Warning: {p} is not prime'''
 
 # Macaulay2 code to check smoothness
-s = "k = ZZ/" + str(p) + ";"
-s += "R = k[x_0..x_" + str(n) +"];"
-s += "I = ideal ("
-for pol in poly_list:
-	s += str(pol) + ","
-s = s[:-1]
-s += ");"
-s += "J = I + minors(" + str(num_poly) + ", jacobian I);"
-s += "saturate J == R"
-t = str(macaulay2(s))
-if t[0] == "f": # t == "false"
-	print("Warning: F not smooth modulo " + str(p))
-	assert False
+s = f'''
+k = ZZ/{p};
+R = k[x_0..x_{n}];
+I = ideal {str(tuple(poly_list))[:-2]});
+J = I + minors({num_poly}, jacobian I);
+saturate J == R
+'''
+assert str(macaulay2(s)) == "true", f'''Warning: F not smooth modulo {p}'''
 
 
 # Macaulay2 code to run to compute Griffiths ring
-s = "R = QQ[x_0..x_" + str(n) + ",y_1..y_" + str(num_poly)
-s += ", Degrees=>{" + str(n+1) + ":{0,1},"
-for i in range(num_poly):
-	s += "{1,-" + str(d[i]) + "},"
-s = s[:-1]
-s += "}];"
-s += "F = "
-for i in range(num_poly):
-	s += "y_" + str(i+1) + "*(" + str(poly_list[i]) + ")+"
-s = s[:-1]
-s += ";"
-s += "J = R/ideal jacobian F;"
-# s += "for p from 0 to " + str(n+2) + " list hilbertFunction({p,"  + str(m) + "}, J);"
-s += "for i from 0 to " + str(n-num_poly) + " list toString basis({i,"  + str(m) + "}, J);"
-s = s[:-1]
+s = f'''
+R = QQ[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},{str([(1,-i) for i in d])[1:-1].replace('(','{').replace(')','}')}}}];
+F={sum([y_vars[i] * poly_list[i] for i in range(num_poly)])};
+J = R/ideal jacobian F;
+for i from 0 to {n-num_poly} list toString basis({{i,{m}}}, J)
+'''
 t = str(macaulay2(s))
 t = t.replace("{","").replace("}","").replace("^","**").replace(" ","").split("matrix")[1:]
 t = "".join(t).split(",")
@@ -101,6 +86,9 @@ B = []
 for _ in t:
 	eval("B.append(R(" + _ +"))")
 print(B)
+
+# s += "for p from 0 to " + str(n+2) + " list hilbertFunction({p,"  + str(m) + "}, J);"
+
 
 # todo: go ahead and convert this into a basis sage likes
 
