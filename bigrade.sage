@@ -1,74 +1,12 @@
 import itertools
 
-
-# R = QQ[x_0,x_1,x_2,y_0, Degrees=>{3:{0,1},{1,-3}}]
-# f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2
-# f = random({0,2}, R)
-# F = y_0 * f
-# J = R/ideal jacobian F
-# for p from 0 to 1 list hilbertFunction({p,0}, J)
-# basis({0,0}, J)
-# basis({1,0}, J)
-
-
-# My Macualay2 code
-# R = QQ[x_0..x_4,y_0,y_1, Degrees=>{5:{0,1},{1,-2},{1,-3}}]
-# f = random({0,2}, R)
-# g = random({0,3},R)
-# F = y_0 * f + y_1 * g
-# J = R/ideal jacobian F
-# for p from 0 to 5 list hilbertFunction({p,0}, J)
-# basis({0,0}, J)
-# basis({1,0}, J)
-# basis({2,0}, J)
-
-# My Macualay2 code
-# R = QQ[x_0..x_3,y_0,y_1, Degrees=>{4:{0,1},{1,-2},{1,-2}}]
-# f = random({0,2}, R)
-# g = random({0,2},R)
-# F = y_0 * f + y_1 * g
-# J = R/ideal jacobian F
-# for p from 0 to 5 list hilbertFunction({p,0}, J)
-# basis({0,0}, J)
-# basis({1,0}, J)
-# basis({2,0}, J)
-
-# R = QQ[x_0..x_3,y_0,y_1, Degrees=>{4:{0,1},{1,-2},{1,-2}}]
-# f = x_0^2 + 2*x_1^2 - x_2^2 + 7*x_3^2
-# g = x_0*x_1 + 2*x_0*x_2 - 4*x_1*x_3+x_2^2
-# F = y_0 * f + y_1 * g
-# J = R/ideal jacobian F
-# for p from 0 to 5 list hilbertFunction({p,0}, J)
-# basis({0,0}, J)
-# basis({1,0}, J)
-# basis({2,0}, J)
-
-
-# Nick's Macaulay2 code
-# R = QQ[x_0..x_4,y_0,y_1, Degrees=>{5:{0,1},{1,-2},{1,-3}}]
-# f = random({1,0}, R)
-# J = R/ideal jacobian f
-# for p from 0 to 5 list hilbertFunction({p,0}, J)
-# basis({0,0}, J)
-# basis({1,0}, J)
-# basis({2,0}, J)
-
-
-
-
-
 # poly_list = list(var('f_%d' % i) for i in range(num_poly))
-
 
 # Z = V(f0,..,fc)
 # then canonical bundle of Z w_z \cong O_Z(m) with
 # m = sum(di) - n - 1
 
-
 # J_p,m = H^{n-p,p}_van(X)
-
-
-
 
 # d_i = deg(f_i)
 
@@ -77,19 +15,16 @@ import itertools
 # deg(y_i) = (1,-deg(f_i))
 
 
-# number of variables - 1
-# n = 3
-
 # number of hypersurfaces in complete intersection
 
-num_poly = 2
+num_poly = 1
 
-p = 7
+p = 17
 prec = 2
 
 
-# R.<x_0,x_1,x_2,y_1> = QQ[]
-R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+R.<x_0,x_1,x_2,y_1> = QQ[]
+# R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2> = QQ[]
 
 gens = R.gens()
@@ -102,9 +37,9 @@ y_vars = gens[n+1:]
 # J_p,m consists of p copies of y_i and sum_d_i copies of x_j
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
-# f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2
-f = x_0^2 + x_1^2 + x_2^2 + x_3^2
-g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2
+# f = x_0^2 + x_1^2 + x_2^2 + x_3^2
+# g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # smooth mod 5,7,11,13,17,19,23
 # not 2,3
 
@@ -114,28 +49,20 @@ g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # g = -2*x_0^3-2*x_0^2*x_1+x_0*x_1^2-x_1^3+2*x_0^2*x_2-x_0*x_1*x_2-2*x_1^2*x_2-2*x_1*x_2^2+x_0^2*x_3+2*x_0*x_1*x_3+2*x_1^2*x_3+2*x_0*x_2*x_3-x_1*x_2*x_3+x_0*x_3^2+x_2*x_3^2-x_0^2*x_4+2*x_1^2*x_4-2*x_0*x_2*x_4+x_1*x_2*x_4-2*x_2^2*x_4-2*x_2*x_3*x_4+2*x_0*x_4^2-x_2*x_4^2-2*x_4^3
 
 
-# B = [R(1), x_2^3*y_0] # need to be careful to use a basis sage likes
-# B = [R(1), x_3^2*y_1]
-# B = [R(1),x_0*x_1*x_4*y_1, x_0*x_2*x_4*y_1, x_0*x_3^2*y_1, x_0*x_3*x_4*y_1, x_0*x_4^2*y_1, x_1^2*x_4*y_1,x_1*x_2*x_4*y_1, x_1*x_3^2*y_1, x_1*x_3*x_4*y_1, x_1*x_4^2*y_1, x_2^2*x_3*y_1, x_2^2*x_4*y_1, x_2*x_3^2*y_1,x_2*x_3*x_4*y_1, x_2*x_4^2*y_1, x_3^3*y_1, x_3^2*x_4*y_1, x_3*x_4^2*y_1, x_4^3*y_1,x_4^6*y_1^2]
-
-# poly_list = [f]
-f_0 = f; f_1 = g;
-poly_list = [f_0,f_1]
+poly_list = [f]
+# f_0 = f; f_1 = g;
+# poly_list = [f_0,f_1]
 
 d = [_.degree() for _ in poly_list]
 m = sum([f.degree() for f in poly_list]) - n - 1
 
 F = sum([y_vars[i] * poly_list[i] for i in range(num_poly)])
 
+if not p in Primes():
+	print("Warning: "+ str(p) + " is not prime")
+	assert False
+
 # Macaulay2 code to check smoothness
-
-# k = ZZ/2
-# R = k[x_0..x_5]
-# f = x_0^3 + x_1*x_2^2 + x_2^3 + x_0^2*x_3 + x_0*x_1*x_3 + 4*x_1*x_2*x_3 + x_0^2*x_4 + x_1^2*x_4 + 8*x_0*x_2*x_4 + x_2^2*x_4 + 4*x_2*x_3*x_4 + x_3^2*x_4 + x_1*x_4^2 + x_2*x_4^2 + x_4^3 + 4*x_0*x_1*x_5 + x_1*x_2*x_5 + 2*x_1*x_3*x_5 + 2*x_2*x_3*x_5 + 4*x_0*x_4*x_5 + x_1*x_4*x_5 + 6*x_3*x_4*x_5 + x_4^2*x_5 + x_0*x_5^2 + x_2*x_5^2 + x_3*x_5^2 + x_4*x_5^2
-# I = ideal(f)
-# J = I + minors(2, jacobian I)
-# saturate J -- if this is ideal 1 then you've got a smooth c.i.
-
 s = "k = ZZ/" + str(p) + ";"
 s += "R = k[x_0..x_" + str(n) +"];"
 s += "I = ideal ("
@@ -143,7 +70,6 @@ for pol in poly_list:
 	s += str(pol) + ","
 s = s[:-1]
 s += ");"
-
 s += "J = I + minors(" + str(num_poly) + ", jacobian I);"
 s += "saturate J == R"
 t = str(macaulay2(s))
@@ -261,7 +187,6 @@ for i in range(len(B)):
                 
             else:
                 summer += term
-    #             print(term)
         else:
             summer += term
     
@@ -269,7 +194,6 @@ for i in range(len(B)):
         frob_matrix[i][j] = summer.monomial_coefficient(R(B[j])) * factorial(pole_order(B[j])+num_poly -1) #% p^prec
         
     print(B[i],summer)
-    # assert summer == sum([frob_matrix[i][_]*B[_] for _ in range(len(B))])
 
 if all([all([a.ord(p)>=0 for a in b]) for b in frob_matrix]):
     frob_matrix = [[a % p^ prec for a in b] for b in frob_matrix]
