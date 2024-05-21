@@ -20,7 +20,7 @@ import itertools
 num_poly = 1
 
 p = 5
-prec = 2
+prec = 4
 
 
 # R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
@@ -94,12 +94,11 @@ for _ in t:
 		eval("B.append(R(" + _ +"))")
 print(B)
 
-
 # Macaulay2 code to run to compute P1
 s = f'''
 R = QQ[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
 {str([(1,-i) for i in d])[1:-1].replace('(','{').replace(')','}')}}}];
-toString basis({{{1},{m}}}, R)
+toString basis({{1,{m}}}, R)
 '''
 t = str(macaulay2(s))
 t = t.replace("{","").replace("}","").replace("^","**").replace(" ","").split("matrix")[1:]
@@ -108,10 +107,9 @@ P1 = []
 for _ in t:
 	if _ != "":
 		eval("P1.append(R(" + _ +"))")
-P1 = [_*prod(gens) for _ in P1]
-# print(P1)
+print(P1)
 
-# Macaulay2 code to run to compute Pn
+# Macaulay2 code to run to compute P1
 s = f'''
 R = QQ[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
 {str([(1,-i) for i in d])[1:-1].replace('(','{').replace(')','}')}}}];
@@ -120,12 +118,11 @@ toString basis({{{n},{m}}}, R)
 t = str(macaulay2(s))
 t = t.replace("{","").replace("}","").replace("^","**").replace(" ","").split("matrix")[1:]
 t = "".join(t).split(",")
-Pn = []
+Pn_plus_1 = []
 for _ in t:
 	if _ != "":
-		eval("Pn.append(R(" + _ +"))")
-Pn = [_*prod(gens) for _ in Pn]
-# print(Pn)
+		eval("Pn_plus_1.append(R(" + _ +"))")
+print(Pn_plus_1)
 
 # s += "for p from 0 to " + str(n+2) + " list hilbertFunction({p,"  + str(m) + "}, J);"
 
@@ -135,37 +132,12 @@ Pn = [_*prod(gens) for _ in Pn]
 I = F.jacobian_ideal()
 J = R.quotient_ring(I)
 
-xI = R.ideal([_*F.derivative(_) for _ in R.gens()])
-xJ = R.quotient(xI)
-
-
-
 
 def monomial_to_vector(m):
     return list(m.exponents()[0])
 
 def vector_to_monomial(v):
     return prod([gens[i]^v[i] for i in range(n+num_poly+1)])
-
-P1_pts = [monomial_to_vector(a) for a in P1]
-
-Pn_minus_1 = Pn #todo: rename this!
-Pn_minus_1_pts = [monomial_to_vector(a) for a in Pn_minus_1]
-size_pn_minus_1 = len(Pn_minus_1_pts)
-
-Pn_minus_1_list = list(Pn_minus_1)
-
-def to_pn_minus_1_basis(g):
-    return_vec = size_pn_minus_1 * [0]
-    for monomial in g.monomials():
-        ind = Pn_minus_1_list.index(monomial)
-        return_vec[ind] = g.monomial_coefficient(monomial)
-    return return_vec
-
-# todo: figure out why I need to cast to R
-def from_pn_minus_1_basis(g_vec):
-    return sum([g_vec[i] * Pn_minus_1_list[i] for i in range(size_pn_minus_1)])
-
 
 
 def monomial_degree(m):
@@ -206,136 +178,12 @@ def frobenius_on_cohom(i,prec = 2):
     return R(g *p^(n -1) / prod(gens))
 
 
-
-lift_dict = {}
-
-def lift_poly(g):
-    summer = (n+num_poly+1) * [0]
-    for monomial in g.monomials():
-
-        if not monomial in lift_dict.keys():
-            c = xJ(monomial).lift()
-            r = (monomial-c).lift(xI)
-            lift_dict[monomial] = r
-        monomial_lift = lift_dict[monomial]
-        c = g.monomial_coefficient(monomial)
-        for i in range(n+num_poly+1):
-            summer[i] += c*monomial_lift[i]
-    return summer   
-
-def to_uvg(h):
-    hdict = h.dict()
-    return_list = []
-
-
-    for etuple in hdict.keys():
-        vector = list(etuple)
-        c = hdict[etuple]
-        # todo: save on divisibility?
-
-        g = 0
-        for g_vec in Pn_minus_1_pts:
-            if all([vector[i] >= g_vec[i] for i in range(n+num_poly+1)]):
-                g = g_vec
-        vector = [vector[i] - g[i] for i in range(n+num_poly+1)]
-        u = vector
-        g = c * vector_to_monomial(g)
-        return_list.append([u,g])
-    return return_list
-
-
-# set of matrices of size |Pn_minus_1| x |Pn_minus_1|
-Ruv_const_dict = {}
-Ruv_u_dict = {}
-
-def Ruv_const_helper(v,g):
-    gi = lift_poly(vector_to_monomial(v)*g)
-    h = sum([gi[i] + Rgens[i] * (gi[i]).derivative(Rgens[i]) for i in range(n+1)])
-    h += sum([gi[i]  for i in range(n+1,n+1+num_poly)])
-    return to_pn_minus_1_basis(h)
-
-def Ruv_u_helper(v,g):
-    gi = lift_poly(vector_to_monomial(v)*g)
-    return_ls = [gi[i] for i in range(n+num_poly+1)]
-    return [to_pn_minus_1_basis(a) for a in return_ls]
-
-def compute_Ruv(v):
-    Ruv_u_mat = [list(matrix(size_pn_minus_1)) for i in range(n+num_poly+1)]
-    Ruv_const_mat = list(matrix(size_pn_minus_1))
-
-    for i in range(size_pn_minus_1):
-        g = Pn_minus_1_list[i]
-        temp = Ruv_u_helper(v,g)
-        for j in range(n):
-            Ruv_u_mat[j][i] = temp[j]
-        Ruv_const_mat[i] = Ruv_const_helper(v,g)
-    Ruv_const_dict[tuple(v)] = matrix(Ruv_const_mat)
-    Ruv_u_dict[tuple(v)] = tuple([matrix(Ruv_u_mat[i]) for i in range(n+num_poly+1)])
-    return
-
-
-def reduce_griffiths_dwork(u,g):
-    g_vec = vector(matrix(to_pn_minus_1_basis(g)))
-    # todo: speed up!
-    while (u not in P1_pts):
-        print(u)
-        best_k = -1
-        best_v = -1
-        for v in P1_pts:
-            k = max(u) # garbage value
-            for i in range(n+num_poly+1):
-                if v[i]>0:
-                    k = min(k, u[i]//v[i])
-            if k > best_k:
-                best_k = k
-                best_v = v
-        v = best_v
-        k = best_k
-        if pole_order(vector_to_monomial([u[i] - k*v[i] for i in range(n+num_poly+1)])) == 0:
-            # print("error: overcounted")
-            k -= 1
-        # print(u,v,k)
-
-        if not tuple(v) in Ruv_u_dict.keys():
-            compute_Ruv(v)
-        C = Ruv_const_dict[tuple(v)]
-        D = Ruv_u_dict[tuple(v)]
-
-        E = C + sum([u[i]* D[i] for i in range(n+num_poly+1)])
-        F = sum([v[i] * D[i] for i in range(n+num_poly+1)])
-
-        for ind in range(1,k+1):
-            # left g -> g A
-            g_vec *= (E-ind*F)
-            # g_vec *=  (C + sum([(u[i]-ind*v[i]) * D[i] for i in range(n)]))
-        u = [u[i] - k*v[i] for i in range(n+num_poly+1)]
-    g = from_pn_minus_1_basis(vector(g_vec))
-    
-    return u,g
-
-
 reduction_dict = {}
 
 frob_matrix = [[0 for i in range(len(B))] for j in range(len(B))]
 
 for i in range(len(B)):
     h = frobenius_on_cohom(i,prec)
-    htemp = 0
-    for u,g in to_uvg(h):
-        # todo: can deduce degree u
-        # todo: can just keep track of denom as (denom % p^prec) * p^something
-        # denom = factorial(degree(vector_to_monomial(u))-1+n)
-
-        # this is the slow step
-        u,g = reduce_griffiths_dwork(u,g)
-
-        htemp += vector_to_monomial(u) * g# // denom
-    h = htemp
-
-
-
-
-
     summer = R(0)
     monomial_list = [R(h.monomial_coefficient(monomial)) * monomial for monomial in h.monomials()]
     while len(monomial_list) > 0:
