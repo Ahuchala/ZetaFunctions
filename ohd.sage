@@ -2,9 +2,9 @@ from sympy.utilities.iterables import multiset_permutations
 
 DEBUG = True
 
-p = 53
+p = 5
 
-prec = 3
+prec = 9
 
 if DEBUG:
     assert(is_prime(p))
@@ -40,7 +40,9 @@ n = len(Rgens) #number of variables
 
 # f =w^2 - x^6 - y^6 - z^6
 # f = w^3 + x^3 +y^3 - z^3 - w*x*z+2*y*z^2
-f = x^4 + y^4 + z^4 + w^4 - w * x * y *z
+# f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
+f = x^3 + y^3 + z^3 - x*y*z + w^3
+# f = x^4 + y^4 + z^4 + w^4 - w * x * y *z
 # f = -w^4-w^3*x-w^2*x^2-x^4-w^3*y-w^2*x*y-w*x^2*y+x^3*y+w^2*y^2+w*x*y^2+x^2*y^2-w*y^3+y^4+w^3*z-w^2*x*z-x^3*z-w^2*y*z+w*x*y*z-w*y^2*z+x*y^2*z-w^2*z^2-x^2*z^2-w*y*z^2+x*y*z^2-y^2*z^2+y*z^3+z^4
 # f= 2*x_0^3+2*x_0*x_1^2+x_1^3+2*x_0^2*x_2-x_0*x_1*x_2+2*x_1^2*x_2+x_0*x_2^2+2*x_1*x_2^2+x_2^3-x_0^2*x_3-x_0*x_1*x_3-x_0*x_2*x_3+x_1*x_2*x_3+2*x_2^2*x_3+x_0*x_3^2-x_1*x_3^2-x_2*x_3^2+2*x_0^2*x_4+2*x_0*x_1*x_4-x_1^2*x_4-2*x_0*x_2*x_4-x_1*x_2*x_4+2*x_2^2*x_4+x_0*x_4^2-x_1*x_4^2-2*x_2*x_4^2
 # f = w^4+2*w*x^3-2*x^4-x^3*y-x^2*y^2-y^4+w^3*z-x^3*z-2*w^2*y*z+2*w*x*y*z-x^2*y*z-w*y^2*z+2*x*y^2*z-2*y^3*z-w^2*z^2-2*w*x*z^2+x^2*z^2-2*w*y*z^2+x*y*z^2+y^2*z^2+2*w*z^3+2*x*z^3-2*y*z^3-2*z^4
@@ -111,6 +113,7 @@ B = list(Set(B))
 print(len(B))
 print(B)
 
+
 Pn_minus_1 = set()
 l = n-1+1
 Pd = lattice_polytope.dilation(l)
@@ -124,6 +127,10 @@ Pn_minus_1_pts = [monomial_to_vector(a) for a in Pn_minus_1]
 size_pn_minus_1 = len(Pn_minus_1_pts)
 
 Pn_minus_1_list = list(Pn_minus_1)
+
+# print(P1)
+# print(Pn_minus_1)
+assert False
 
 def to_pn_minus_1_basis(g):
     return_vec = size_pn_minus_1 * [0]
