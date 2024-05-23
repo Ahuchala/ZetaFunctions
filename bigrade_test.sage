@@ -24,11 +24,11 @@ p = 11
 prec = 2
 
 
-# R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
 
-R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+# R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,x_5,y_1,y_2> = QQ[]
 
@@ -43,7 +43,9 @@ y_vars = gens[n+1:]
 # J_p,m consists of p copies of y_i and sum_d_i copies of x_j
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
-# f = sum([gen**6 for gen in x_vars])
+# f = sum([gen^4 for gen in x_vars])
+# f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
+
 f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
 # f = x_0^2 + x_1^2 + x_2^2 + x_3^2
 g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
@@ -127,7 +129,11 @@ for _ in t:
         eval("B.append(R(" + _ +"))")
 print(B)
 
+max_cohomology_pole_order = max([pole_order(_) for _ in B])
+
 # Macaulay2 code to run to compute P1
+# Note that this is actually U_{1,0} rather than U_{1,m}
+# since we need U_{1,0}*P_n in P_{n+1}
 s = f'''
 R = QQ[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
 {str([(1,-i) for i in d])[1:-1].replace('(','{').replace(')','}')}}}];
@@ -140,7 +146,7 @@ P1 = []
 for _ in t:
     if _ != "":
         eval("P1.append(R(" + _ +"))")
-print(P1)
+# print(P1)
 
 P1_pts = [monomial_to_vector(_) for _ in P1]
 
@@ -157,7 +163,7 @@ Pn = []
 for _ in t:
     if _ != "":
         eval("Pn.append(R(" + _ +"))")
-print(Pn)
+# print(Pn)
 size_pn = len(Pn)
 Pn_pts = [monomial_to_vector(mon) for mon in Pn]
 
@@ -182,7 +188,7 @@ Pn_pts = [monomial_to_vector(mon) for mon in Pn]
 # todo: go ahead and convert this into a basis sage likes
 
 
-xI = R.ideal([gen * F.derivative(gen) for gen in gens])
+xI = R.ideal([gen *F.derivative(gen) for gen in gens])
 
 
 I = F.jacobian_ideal()
@@ -231,8 +237,15 @@ def to_ug(frobenius_of_Bi):
     # (x_0^5*x_1*y_1^2).dict() looks like {(5, 1, 0, 2): 1}
     hdict = frobenius_of_Bi.dict()
 
+    
 
-    for etuple in hdict.keys():
+    while hdict: # is_nonempty
+        hdict_keys = hdict.keys()
+        hdict_keys_ls = list(hdict_keys)
+
+    # for etuple in hdict.keys():
+        etuple = hdict_keys_ls[0]
+
         vector = list(etuple)
         c = hdict[etuple]
         # todo: save on divisibility?
@@ -245,11 +258,20 @@ def to_ug(frobenius_of_Bi):
                 break
         u = [vector[i] - g[i] for i in range(n+num_poly+1)]
 
-        g =  vector_to_monomial(g)
+        g =  vector_to_monomial(g) * hdict[etuple]
+        hdict.pop(etuple)
+        for etuple_2 in hdict_keys:
+            temp_vec = [u[i] - etuple_2[i] for i in range(n+num_poly+1)]
+            if all([temp_vec[i] > 0 for i in range(n+num_poly+1)]):
+                g += hdict[etuple_2] * vector_to_monomial(temp_vec)
+                hdict.pop(etuple_2)
+        
+
+        # g =  vector_to_monomial(g)
         # assert g != 0
-        assert g in Pn
-        print(g)
-        g *= c
+        # assert g in Pn
+        # print(g)
+        # g *= c
         return_list.append([u,g])
     return return_list
 
@@ -286,15 +308,15 @@ Ruv_u_dict = {}
 def Ruv_const_helper(v,g):
     gi = lift_poly(vector_to_monomial(v)*g)
     h = sum([gi[i] + gens[i] * (gi[i]).derivative(gens[i]) for i in range(n+num_poly+1)])
-    print(h)
+    # print(h)
     return to_pn_basis(h)
 
 def Ruv_u_helper(v,g):
-    print(v,g)
+    # print(v,g)
     gi = lift_poly(vector_to_monomial(v)*g)
     # return_ls = [gi[i] for i in range(n+num_poly+1)]
     # return [to_pn_basis(a) for a in return_ls]
-    print(gi)
+    # print(gi)
     return [to_pn_basis(a) for a in gi]
 
 
@@ -316,7 +338,7 @@ def compute_Ruv(v):
 def reduce_griffiths_dwork(u,g):
     g_vec = vector(matrix(to_pn_basis(g)))
     # todo: speed up!
-    while(pole_order(vector_to_monomial(u)))>n: #??
+    while(pole_order(vector_to_monomial(u)))>max_cohomology_pole_order:
     # while (u not in P1_pts):
         print(u)
         best_k = -1
@@ -336,9 +358,7 @@ def reduce_griffiths_dwork(u,g):
             # print("error: overcounted")
             k -= 1
         # print(u,v,k)
-        # todo: make this work for k != 1
-        # k = 1
-
+        # print(k)
         if not tuple(v) in Ruv_u_dict.keys():
             compute_Ruv(v)
         C = Ruv_const_dict[tuple(v)]
@@ -368,10 +388,6 @@ for i in range(len(B)):
         htemp += vector_to_monomial(u) * g
     h = htemp
 
-
-
-
-
     summer = R(0)
     monomial_list = [R(h.monomial_coefficient(monomial)) * monomial for monomial in h.monomials()]
     while len(monomial_list) > 0:
@@ -390,10 +406,8 @@ for i in range(len(B)):
                     l = r.lift(I)
                     temp = sum([l[i].derivative(gens[i]) for i in range(n+num_poly+1)])
                     reduction_dict[monomial] = temp + q
+                # this should be implemented better
                 result = term.monomial_coefficient(monomial)* reduction_dict[monomial]
-                # result = sum([_*term.monomial_coefficient(monomial) * result.monomial_coefficient(_) for _ in result.monomials()])
-                # for _ in result.monomials():
-                    # monomial_list.append(_ * result.monomial_coefficient(_))
                 h = sum(monomial_list) + result
                 monomial_list = [R(h.monomial_coefficient(monomial)) * monomial for monomial in h.monomials()]
                 
