@@ -17,15 +17,18 @@ import itertools
 
 # number of hypersurfaces in complete intersection
 
+# num_poly = 1
 num_poly = 2
 
-p = 7
+p = 11
 prec = 2
 
 
-R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
-# R.<x_0,x_1,x_2,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+# R.<x_0,x_1,x_2,y_1> = QQ[]
+# R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
+
+R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,x_5,y_1,y_2> = QQ[]
 
@@ -40,8 +43,9 @@ y_vars = gens[n+1:]
 # J_p,m consists of p copies of y_i and sum_d_i copies of x_j
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
-# f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
-f = x_0^2 + x_1^2 + x_2^2 + x_3^2
+# f = sum([gen**6 for gen in x_vars])
+f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
+# f = x_0^2 + x_1^2 + x_2^2 + x_3^2
 g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # h = x_0*x_1 + x_1*x_2 + x_2*x_3
 
@@ -127,7 +131,7 @@ print(B)
 s = f'''
 R = QQ[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
 {str([(1,-i) for i in d])[1:-1].replace('(','{').replace(')','}')}}}];
-toString basis({{1,{m}}}, R)
+toString basis({{1,{0}}}, R)
 '''
 t = str(macaulay2(s))
 t = t.replace("{","").replace("}","").replace("^","**").replace(" ","").split("matrix")[1:]
@@ -178,11 +182,14 @@ Pn_pts = [monomial_to_vector(mon) for mon in Pn]
 # todo: go ahead and convert this into a basis sage likes
 
 
+xI = R.ideal([gen * F.derivative(gen) for gen in gens])
+
+
 I = F.jacobian_ideal()
 J = R.quotient_ring(I)
 
 
-xI = R.ideal([gen * F.derivative(gen) for gen in gens])
+
 
 # def degree_vector(v):
 #    return sum([weights[i] * v[i] for i in range(n+num_poly)]) // fdeg
