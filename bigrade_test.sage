@@ -20,7 +20,7 @@ import itertools
 num_poly = 1
 # num_poly = 2
 
-p = 389
+p = 997
 # p = 10193
 prec = 2
 
@@ -210,7 +210,12 @@ J = R.quotient_ring(I)
 
 
 def sigma(g):
-    return sum([g.coefficient(monomial)* monomial^p for monomial in g.monomials()])
+    g_dict = g.dict()
+    g_dict_keys = set(g_dict.keys())
+    for key in g_dict_keys:
+        g_dict[tuple([k*p for k in key])] = g_dict.pop(key)
+    return R(g_dict)
+    # return sum([g.coefficient(monomial)* monomial^p for monomial in g.monomials()])
 
 def frobenius(g,prec=2):
     d = pole_order(g)
