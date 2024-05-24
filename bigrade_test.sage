@@ -17,16 +17,16 @@ import itertools
 
 # number of hypersurfaces in complete intersection
 
-# num_poly = 1
-num_poly = 2
+num_poly = 1
+# num_poly = 2
 
-p = 11
+p = 5
 prec = 2
 
 
-R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+# R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,y_1> = QQ[]
-# R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
+R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
 
 # R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2> = QQ[]
@@ -43,12 +43,12 @@ y_vars = gens[n+1:]
 # J_p,m consists of p copies of y_i and sum_d_i copies of x_j
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
-# f = sum([gen^4 for gen in x_vars])
+f = sum([gen^4 for gen in x_vars])
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
-f = x_0^2 + x_1^2 + x_2^2 + x_3^2
-g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+# f = x_0^2 + x_1^2 + x_2^2 + x_3^2
+# g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # h = x_0*x_1 + x_1*x_2 + x_2*x_3
 
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2
@@ -155,8 +155,10 @@ P1_pts = [monomial_to_vector(_) for _ in P1]
 s = f'''
 R = QQ[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
 {str([(1,-i) for i in d])[1:-1].replace('(','{').replace(')','}')}}}];
-toString basis({{{n},{m}}}, R)
+toString basis({{{n},{-2}}}, R)
 '''
+# toString basis({{{n},{m}}}, R)
+
 # seems like it should be max_cohomology_pole_order instead of n
 t = str(macaulay2(s))
 t = t.replace("{","").replace("}","").replace("^","**").replace(" ","").split("matrix")[1:]
@@ -315,7 +317,8 @@ def Ruv_const_helper(v,g):
     return to_pn_basis(h)
 
 def Ruv_u_helper(v,g):
-    # print(v,g)
+    print(v,g)
+    print(vector_to_monomial(v)*g)
     gi = lift_poly(vector_to_monomial(v)*g)
     # return_ls = [gi[i] for i in range(n+num_poly+1)]
     # return [to_pn_basis(a) for a in return_ls]
@@ -337,6 +340,25 @@ def compute_Ruv(v):
     Ruv_u_dict[tuple(v)] = tuple([matrix(Ruv_u_mat[i]) for i in range(n+num_poly+1)])
     return
 
+# writes u as u' + kv with k maximal and v in P1
+def compute_vk(u):
+    best_k = -1
+    best_v = -1
+    for v in P1_pts:
+        k = max(u) # garbage value
+        for i in range(n+num_poly+1):
+            if v[i]>0:
+                k = min(k, u[i]//v[i])
+        if k > best_k:
+            best_k = k
+            best_v = v
+    v = best_v
+    k = best_k
+    # I think I could just count the y_i's
+    if pole_order(vector_to_monomial([u[i] - k*v[i] for i in range(n+num_poly+1)])) == 0: #m?
+        # print("error: overcounted")
+        k -= 1
+    return v,k
 
 def reduce_griffiths_dwork(u,g):
     g_vec = vector(matrix(to_pn_basis(g)))
@@ -344,24 +366,9 @@ def reduce_griffiths_dwork(u,g):
     while(pole_order(vector_to_monomial(u)))>max_cohomology_pole_order:
     # while (u not in P1_pts):
         print(u)
-        best_k = -1
-        best_v = -1
-        for v in P1_pts:
-            k = max(u) # garbage value
-            for i in range(n+num_poly+1):
-                if v[i]>0:
-                    k = min(k, u[i]//v[i])
-            if k > best_k:
-                best_k = k
-                best_v = v
-        v = best_v
-        k = best_k
-        # I think I could just count the y_i's
-        if pole_order(vector_to_monomial([u[i] - k*v[i] for i in range(n+num_poly+1)])) == 0: #m?
-            # print("error: overcounted")
-            k -= 1
-        # print(u,v,k)
-        # print(k)
+
+        v,k = compute_vk(u)
+
         if not tuple(v) in Ruv_u_dict.keys():
             compute_Ruv(v)
         C = Ruv_const_dict[tuple(v)]
@@ -438,3 +445,4 @@ print(poly)
 poly = sum([(poly.monomial_coefficient(mono) % p^(prec) )* mono if (poly.monomial_coefficient(mono)% p^prec) < (p^prec)//2 else (-p^(prec)+poly.monomial_coefficient(mono)% p^prec)*mono for mono in poly.monomials()])
 print(poly)
 print(p)
+print(size_pn)
