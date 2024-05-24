@@ -20,7 +20,7 @@ import itertools
 num_poly = 1
 # num_poly = 2
 
-p = 997
+p = 11
 # p = 10193
 prec = 2
 
@@ -203,12 +203,8 @@ I = F.jacobian_ideal()
 J = R.quotient_ring(I)
 
 
-
-
-# def degree_vector(v):
-#    return sum([weights[i] * v[i] for i in range(n+num_poly)]) // fdeg
-
-
+# returns frobenius of polynomial g
+# e.g x + y -> x^p + y^p
 def sigma(g):
     g_dict = g.dict()
     g_dict_keys = set(g_dict.keys())
@@ -217,6 +213,7 @@ def sigma(g):
     return R(g_dict)
     # return sum([g.coefficient(monomial)* monomial^p for monomial in g.monomials()])
 
+# returns frobenius of logarithmic form g/f^d * omega
 def frobenius(g,prec=2):
     d = pole_order(g)
     summer = 0
@@ -224,7 +221,7 @@ def frobenius(g,prec=2):
     fj = R(1)
     for j in range(prec):
 #        cacheing may be appropriate
-        numer = binomial(-d,j) * binomial(d+prec-1,d+j) * sigma_g*sigma(fj) / factorial(pole_order(sigma_g) + pole_order(sigma(fj))-1)
+        numer = binomial(-d,j) * binomial(d+prec-1,d+j) * sigma_g*sigma(fj)
         summer += numer
         fj *= F
     return summer
@@ -401,11 +398,14 @@ for i in range(len(B)):
     h = frobenius_on_cohom(i,prec)
     htemp = 0
     for u,g in to_ug(h):
+        denom = factorial(pole_order(vector_to_monomial(u))+pole_order(g))
+
         print(u,g)
         # this is the slow step
         u,g = reduce_griffiths_dwork(u,g)
 
-        htemp += vector_to_monomial(u) * g
+
+        htemp += vector_to_monomial(u) * g // denom
     h = htemp
 
     summer = R(0)
