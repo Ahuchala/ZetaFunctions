@@ -119,7 +119,8 @@ assert str(macaulay2(s)) == "true", f'Warning: F not smooth modulo {p}'
 
 # Macaulay2 code to run to compute Griffiths ring
 s = f'''
-R = QQ[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
+k = ZZ/{p};
+R = k[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
 {str([(1,-i) for i in d])[1:-1].replace('(','{').replace(')','}')}}}];
 F={sum([y_vars[i] * poly_list[i] for i in range(num_poly)])};
 J = R/ideal jacobian F;
@@ -140,7 +141,8 @@ max_cohomology_pole_order = max([pole_order(_) for _ in B])
 # Note that this is actually U_{1,0} rather than U_{1,m}
 # since we need U_{1,0}*P_n in P_{n+1}
 s = f'''
-R = QQ[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
+k = ZZ/{p};
+R = k[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
 {str([(1,-i) for i in d])[1:-1].replace('(','{').replace(')','}')}}}];
 toString basis({{1,{0}}}, R)
 '''
@@ -157,7 +159,8 @@ P1_pts = [monomial_to_vector(_) for _ in P1]
 
 # Macaulay2 code to run to compute Pn
 s = f'''
-R = QQ[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
+k = ZZ/{p};
+R = k[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
 {str([(1,-i) for i in d])[1:-1].replace('(','{').replace(')','}')}}}];
 toString basis({{{n},{-2}}}, R)
 '''
