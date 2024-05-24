@@ -20,16 +20,16 @@ import itertools
 num_poly = 1
 # num_poly = 2
 
-p = 101
+p = 5
 # p = 10193
 prec = 2
 
 
 
 # R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
-R.<x_0,x_1,x_2,y_1> = QQ[]
+# R.<x_0,x_1,x_2,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
-# R.<x_0,x_1,x_2,x_3,x_4,y_1> = QQ[]
+R.<x_0,x_1,x_2,x_3,x_4,y_1> = QQ[]
 
 # R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2> = QQ[]
@@ -46,7 +46,7 @@ y_vars = gens[n+1:]
 # J_p,m consists of p copies of y_i and sum_d_i copies of x_j
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
-# f = sum([gen^4 for gen in x_vars])
+f = sum([gen^3 for gen in x_vars])
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
@@ -54,7 +54,7 @@ y_vars = gens[n+1:]
 # g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # h = x_0*x_1 + x_1*x_2 + x_2*x_3
 
-f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2
+# f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2
 
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 # f = x_0^4+x_0^3*x_1+x_0*x_1^3+x_0^2*x_1*x_2+x_0*x_1^2*x_2+x_1^3*x_2+x_0^2*x_2^2+x_0*x_2^3+x_1*x_2^3+x_0*x_1*x_2*x_3+x_2^3*x_3+x_0^2*x_3^2+x_0*x_1*x_3^2+x_1*x_2*x_3^2+x_0*x_3^3+x_1*x_3^3+x_2*x_3^3
@@ -253,14 +253,22 @@ def to_ug(frobenius_of_Bi):
                 break
         u = [vector[i] - g[i] for i in range(n+num_poly+1)]
 
-        g = R(0)
+        # g = R(0)
+        g =  vector_to_monomial(g) * hdict[etuple]
+        hdict.pop(etuple)
 
-        for etuple_2 in hdict_keys_ls:
-            temp_vec = [etuple_2[i]-u[i] for i in range(n+num_poly+1)]
-            if all([temp_vec[i] >= 0 for i in range(n+num_poly+1)]):
-                print('popped')
-                g += hdict[etuple_2] * vector_to_monomial(temp_vec)
-                hdict.pop(etuple_2)
+
+        # g =  vector_to_monomial(g)
+        # assert g != 0
+        # assert g in Pn
+        # print(g)
+        # g *= c
+        # for etuple_2 in hdict_keys_ls:
+        #     temp_vec = [etuple_2[i]-u[i] for i in range(n+num_poly+1)]
+        #     if all([temp_vec[i] >= 0 for i in range(n+num_poly+1)]):
+        #         print('popped')
+        #         g += hdict[etuple_2] * vector_to_monomial(temp_vec)
+        #         hdict.pop(etuple_2)
 
         return_list.append([u,g])
     return return_list
