@@ -17,15 +17,15 @@ import itertools
 
 # number of hypersurfaces in complete intersection
 
-# num_poly = 1
-num_poly = 2
+num_poly = 1
+# num_poly = 2
 
 p = 11
 prec = 2
 
 
-R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
-# R.<x_0,x_1,x_2,y_1> = QQ[]
+# R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+R.<x_0,x_1,x_2,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
 
 # R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
@@ -46,21 +46,21 @@ y_vars = gens[n+1:]
 # f = sum([gen^4 for gen in x_vars])
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 
-f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
+# f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
 # f = x_0^2 + x_1^2 + x_2^2 + x_3^2
-g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+# g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # h = x_0*x_1 + x_1*x_2 + x_2*x_3
 
-# f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2
+f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2
 
 # f = x_0^4+x_0^3*x_1+x_0*x_1^3+x_0^2*x_1*x_2+x_0*x_1^2*x_2+x_1^3*x_2+x_0^2*x_2^2+x_0*x_2^3+x_1*x_2^3+x_0*x_1*x_2*x_3+x_2^3*x_3+x_0^2*x_3^2+x_0*x_1*x_3^2+x_1*x_2*x_3^2+x_0*x_3^3+x_1*x_3^3+x_2*x_3^3
 # f = x_0^2+2*x_0*x_1+2*x_1^2-x_0*x_2+x_1*x_2-2*x_0*x_3-x_1*x_3+2*x_2*x_3-2*x_3^2+x_0*x_4+2*x_2*x_4+2*x_3*x_4
 # g = -2*x_0^3-2*x_0^2*x_1+x_0*x_1^2-x_1^3+2*x_0^2*x_2-x_0*x_1*x_2-2*x_1^2*x_2-2*x_1*x_2^2+x_0^2*x_3+2*x_0*x_1*x_3+2*x_1^2*x_3+2*x_0*x_2*x_3-x_1*x_2*x_3+x_0*x_3^2+x_2*x_3^2-x_0^2*x_4+2*x_1^2*x_4-2*x_0*x_2*x_4+x_1*x_2*x_4-2*x_2^2*x_4-2*x_2*x_3*x_4+2*x_0*x_4^2-x_2*x_4^2-2*x_4^3
 # f = sum([gens[i]^2 for i in range(len(gens[:n+1]))])
 
-# poly_list = [f]
-f_0 = f; f_1 = g;
-poly_list = [f_0,f_1]
+poly_list = [f]
+# f_0 = f; f_1 = g;
+# poly_list = [f_0,f_1]
 # poly_list = [f,g,h]
 
 # todo: check if no rational points?
@@ -156,6 +156,7 @@ R = QQ[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
 {str([(1,-i) for i in d])[1:-1].replace('(','{').replace(')','}')}}}];
 toString basis({{{n},{m}}}, R)
 '''
+# seems like it should be max_cohomology_pole_order instead of n
 t = str(macaulay2(s))
 t = t.replace("{","").replace("}","").replace("^","**").replace(" ","").split("matrix")[1:]
 t = "".join(t).split(",")
@@ -260,11 +261,11 @@ def to_ug(frobenius_of_Bi):
 
         g =  vector_to_monomial(g) * hdict[etuple]
         hdict.pop(etuple)
-        for etuple_2 in hdict_keys:
-            temp_vec = [u[i] - etuple_2[i] for i in range(n+num_poly+1)]
-            if all([temp_vec[i] > 0 for i in range(n+num_poly+1)]):
-                g += hdict[etuple_2] * vector_to_monomial(temp_vec)
-                hdict.pop(etuple_2)
+        # for etuple_2 in hdict_keys_ls:
+        #     temp_vec = [u[i] - etuple_2[i] for i in range(n+num_poly+1)]
+        #     if all([temp_vec[i] > 0 for i in range(n+num_poly+1)]):
+        #         g += hdict[etuple_2] * vector_to_monomial(temp_vec)
+        #         hdict.pop(etuple_2)
         
 
         # g =  vector_to_monomial(g)
