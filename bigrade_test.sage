@@ -2,7 +2,7 @@ import itertools
 
 # poly_list = list(var('f_%d' % i) for i in range(num_poly))
 
-# Z = V(f0,..,fc)
+# Z = V(f1,..,fc)
 # then canonical bundle of Z w_z \cong O_Z(m) with
 # m = sum(di) - n - 1
 
@@ -20,7 +20,7 @@ import itertools
 num_poly = 1
 # num_poly = 2
 
-p = 11
+p = 101
 # p = 10193
 prec = 2
 
@@ -98,7 +98,7 @@ def monomial_degree(m):
     e = m.exponents()[0]
 #   x_i contribute (0, sum(e[:n]))
 #   y_i contribute (sum(e[n:],sum([-poly_list[i].degree() for i in range(num_poly)] ))
-    return [sum(e[n+1:]), sum(e[:n+1])+sum([-d[i] for i in range(num_poly)] )]
+    return [sum(e[n+1:]),  sum(e[:n+1]) +     sum([e[i+n+1]*-d[i] for i in range(num_poly)] )]
 
 # each monomial is of the form m / F^j; returns j
 def pole_order(m):
@@ -178,25 +178,6 @@ for _ in t:
 size_pn = len(Pn)
 Pn_pts = [monomial_to_vector(mon) for mon in Pn]
 
-# # Macaulay2 code to run to compute P{n+1}
-# s = f'''
-# R = QQ[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
-# {str([(1,-i) for i in d])[1:-1].replace('(','{').replace(')','}')}}}];
-# toString basis({{{n+1},{m}}}, R)
-# '''
-# t = str(macaulay2(s))
-# t = t.replace("{","").replace("}","").replace("^","**").replace(" ","").split("matrix")[1:]
-# t = "".join(t).split(",")
-# Pn_plus_1 = []
-# for _ in t:
-#   if _ != "":
-#       eval("Pn_plus_1.append(R(" + _ +"))")
-# print(Pn_plus_1)
-
-
-# s += "for p from 0 to " + str(n+2) + " list hilbertFunction({p,"  + str(m) + "}, J);"
-
-# todo: go ahead and convert this into a basis sage likes
 
 
 xI = R.ideal([gen *F.derivative(gen) for gen in gens])
@@ -216,6 +197,7 @@ def sigma(g):
     return R(g_dict)
     # return sum([g.coefficient(monomial)* monomial^p for monomial in g.monomials()])
 
+# todo: make this return a dict instead of a polynomial
 # returns frobenius of logarithmic form g/f^d * omega
 def frobenius(g,prec=2):
     d = pole_order(g)
@@ -272,21 +254,14 @@ def to_ug(frobenius_of_Bi):
         u = [vector[i] - g[i] for i in range(n+num_poly+1)]
 
         g = R(0)
-        # g =  vector_to_monomial(g) * hdict[etuple]
-        # hdict.pop(etuple)
+
         for etuple_2 in hdict_keys_ls:
             temp_vec = [etuple_2[i]-u[i] for i in range(n+num_poly+1)]
             if all([temp_vec[i] >= 0 for i in range(n+num_poly+1)]):
                 print('popped')
                 g += hdict[etuple_2] * vector_to_monomial(temp_vec)
                 hdict.pop(etuple_2)
-        
 
-        # g =  vector_to_monomial(g)
-        # assert g != 0
-        # assert g in Pn
-        # print(g)
-        # g *= c
         return_list.append([u,g])
     return return_list
 
