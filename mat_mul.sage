@@ -14,7 +14,7 @@ def mat_mul(A,B,k,g_vec):
 	for j in range(1,k+1):
 		# g_vec_S *= A_S - j*B_S
 		if USE_CYTHON:
-			g_vec = multiply_matrix_vector(A-j*B,g_vec)
+			g_vec = multiply_matrix_vector((A-j*B).transpose(),g_vec)
 			print(g_vec)
 			g_vec = [_ % p^(prec+2) for  _ in g_vec]
 		else:
