@@ -17,8 +17,8 @@ import itertools
 
 # number of hypersurfaces in complete intersection
 
-num_poly = 1
-# num_poly = 2
+# num_poly = 1
+num_poly = 2
 
 p = 5
 # p = 10193
@@ -26,10 +26,10 @@ prec = 2
 
 
 
-# R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
-R.<x_0,x_1,x_2,x_3,x_4,y_1> = QQ[]
+# R.<x_0,x_1,x_2,x_3,x_4,y_1> = QQ[]
 
 # R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2> = QQ[]
@@ -46,12 +46,12 @@ y_vars = gens[n+1:]
 # J_p,m consists of p copies of y_i and sum_d_i copies of x_j
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
-f = sum([gen^3 for gen in x_vars])
+# f = sum([gen^3 for gen in x_vars])
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
-# f = x_0^2 + x_1^2 + x_2^2 + x_3^2
-# g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+f = x_0^2 + x_1^2 + x_2^2 + x_3^2
+g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # h = x_0*x_1 + x_1*x_2 + x_2*x_3
 
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2
