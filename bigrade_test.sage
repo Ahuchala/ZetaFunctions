@@ -1,6 +1,8 @@
 # import itertools
 # import numpy as np
 
+# USE_CYTHON = True
+USE_CYTHON = False
 
 # poly_list = list(var('f_%d' % i) for i in range(num_poly))
 
@@ -22,7 +24,7 @@
 # num_poly = 1
 num_poly = 2
 
-p = 5
+p = 11
 # p = 10193
 prec = 2
 

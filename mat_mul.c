@@ -44,3 +44,30 @@ int * c_mat_vec_mul(int n, int * A, int * v){
         }
     return return_vec;
 }
+
+// returns prod_{k=1}^{r}(A+jB)v
+long * c_iterated_mat_vec_mul(int n, int r, long * A, long * B, long * v, long p_prec){
+//  n = dim(A)
+
+    long * old_vec = (long *) malloc(n*sizeof(long));
+    long * new_vec = (long *) malloc(n*sizeof(long));
+    int i,j, k;
+    for(i = 0; i < n; i++) {
+        old_vec[i] = v[i];
+        new_vec[i] = 0;
+    }
+
+    for (k = 1; k < r+1; k++) {
+        for(i = 0; i < n; i++) {
+            for(j = 0; j < n; j++) {
+                new_vec[i] += A[i+n*j] * old_vec[j] - k*B[i+n*j] * old_vec[j];
+            }
+        }
+        for(i = 0; i < n; i++) {
+            old_vec[i] = new_vec[i] % p_prec;
+            new_vec[i] = 0;
+        }
+    }
+    free(new_vec);
+    return old_vec;
+}

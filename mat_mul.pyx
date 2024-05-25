@@ -8,6 +8,7 @@
 
 cdef extern from "mat_mul.c":
     int* c_mat_vec_mul(int n, int * A, int * v)
+    long* c_iterated_mat_vec_mul(int n, int r, long * A, long * B, long * v, long p_prec)
 
 
 
@@ -60,3 +61,29 @@ def sage_mat_vec_mul(n, matrix_A, vec_v):
 
     return answer
 
+# returns prod_{k=1}^{r+1}v(A+jB) mod p^prec
+def sage_iterated_mat_vec_mul(n, r, matrix_A, matrix_B, vec_v, p_prec):
+    cdef long * A = <long *> malloc(n*n*sizeof(long))
+    cdef long * B = <long *> malloc(n*n*sizeof(long))
+    cdef long * v = <long *> malloc(n*sizeof(long))
+
+    # Fill the vectors
+    # note the transposes
+    for i in range(n):
+        for j in range(n):
+            A[i+n*j] = matrix_A[j][i]
+            B[i+n*j] = matrix_B[j][i]
+        v[i] = vec_v[i]
+
+    # Call the C function
+    cdef long * vec3 = c_iterated_mat_vec_mul(n,r,A,B,v, p_prec)
+
+    # Save the answer in a Python object
+    answer = [vec3[i] for i in range(n)]
+
+    free(A)
+    free(B)
+    free(v)
+    free(vec3)
+
+    return answer
