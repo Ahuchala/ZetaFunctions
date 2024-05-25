@@ -1,5 +1,3 @@
-import itertools
-
 # poly_list = list(var('f_%d' % i) for i in range(num_poly))
 
 # Z = V(f1,..,fc)

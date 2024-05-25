@@ -1,5 +1,5 @@
-import itertools
-import numpy as np
+# import itertools
+# import numpy as np
 
 
 # poly_list = list(var('f_%d' % i) for i in range(num_poly))

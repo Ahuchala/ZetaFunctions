@@ -1,64 +1,25 @@
-# S = GF(p^(prec+2))
+# %runfile mat_mul.pyx
+USE_CYTHON = True
+if USE_CYTHON:
+	load("mat_mul.pyx")
+
+# returns A*v
+def multiply_matrix_vector(A,v):
+    n = len(A[0])
+    return vector(sage_mat_vec_mul(n,A,v))
 
 def mat_mul(A,B,k,g_vec):
 	# maybe escape if j is small
 
-	# g_vec_S = vector(S,g_vec)
-	# A_S = matrix(S,A)
-	# B_S = matrix(S,B)
-	# A_np = np.matrix(A,dtype=np.int32)
-	# B_np = np.matrix(B,dtype=np.int32)
-
 	for j in range(1,k+1):
 		# g_vec_S *= A_S - j*B_S
-		g_vec *= A - j *B
+		if USE_CYTHON:
+			g_vec = multiply_matrix_vector(A-j*B,g_vec)
+			print(g_vec)
+			g_vec = [_ % p^(prec+2) for  _ in g_vec]
+		else:
+			g_vec *= A - j *B
 		# todo: only do remainder when needed, and find the correct precision bound
 		# g_vec = np.remainder(g_vec,p^(prec+2))
 	return g_vec
-	# print(g_vec_S)
-	# return [ZZ(_) for _ in g_vec_S]
 
-# import cython
-# cimport numpy as np
-# cimport cython
-
-# # returns \prod_{i=1}^k (A+jB) g_vec
-# def np_mat_mul(A,B,k,g_vec):
-# 	# maybe escape if j is small
-
-# 	A_np = np.matrix(A,dtype=np.int32)
-# 	B_np = np.matrix(B,dtype=np.int32)
-
-# 	for j in range(1,k+1):
-# 		g_vec *= A_np-j*B_np
-# 		# todo: only do remainder when needed, and find the correct precision bound
-# 		g_vec = np.remainder(g_vec,p^(prec+2))
-# 	return g_vec
-
-# def mat_mul(A,B,k,g_vec):
-# 	# maybe escape if j is small
-
-# 	A_c = initialize_cython_matrix(A)
-# 	B_c = initialize_cython_matrix(B)
-
-# 	return cmat_mul(A_c,B_c,k,g_vec)
-# 	# for j in range(1,k+1):
-# 		# g_vec *= A_np-j*B_np
-# 		# todo: only do remainder when needed, and find the correct precision bound
-# 		# g_vec = np.remainder(g_vec,p^(prec+2))
-# 	# return g_vec
-
-# cdef np.ndarray[np.int32, ndim=2] cmat_mul(np.ndarray[np.int32_t, ndim=2] A, np.ndarray[np.int32, ndim=2] B, int k, np.ndarray[np.int32, ndim=1] g_vec):
-# 	# maybe escape if j is small
-
-# 	for j in range(1,k+1):
-# 		g_vec *= A-j*B
-# 		# todo: only do remainder when needed, and find the correct precision bound
-# 		g_vec = np.remainder(g_vec,p^(prec+2))
-# 	return g_vec
-
-
-# def initialize_cython_matrix(A):
-# 	# given a sage matrix A, return a cython/numpy array A_c
-# 	A_c = np.matrix(A,dtype=np.int32)
-# 	return A_c
