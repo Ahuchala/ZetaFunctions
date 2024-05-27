@@ -1,3 +1,6 @@
+# define DTYPE long long
+
+
 // int** c_mat_mul(int** a, int** b) {
 //     size_t dim_a = sizeof(a) / sizeof(a[0]);
 //     int** c = {0}; // sets to zero
@@ -46,11 +49,11 @@ int * c_mat_vec_mul(int n, int * A, int * v){
 }
 
 // returns prod_{k=1}^{r}(A+jB)v
-long * c_iterated_mat_vec_mul(int n, int r, long * A, long * B, long * v, long p_prec){
+DTYPE * c_iterated_mat_vec_mul(int n, int r, DTYPE * A, DTYPE * B, DTYPE * v, DTYPE p_prec){
 //  n = dim(A)
 
-    long * old_vec = (long *) malloc(n*sizeof(long));
-    long * new_vec = (long *) malloc(n*sizeof(long));
+    DTYPE * old_vec = (DTYPE *) malloc(n*sizeof(DTYPE));
+    DTYPE * new_vec = (DTYPE *) malloc(n*sizeof(DTYPE));
     int i,j, k;
     for(i = 0; i < n; i++) {
         old_vec[i] = v[i];
