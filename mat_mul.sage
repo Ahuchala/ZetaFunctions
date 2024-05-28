@@ -11,7 +11,7 @@ def multiply_matrix_vector(A,v):
 def mat_mul(A,B,k,g_vec):
 	# maybe escape if j is small
 	if USE_CYTHON and k > 5:
-		return vector(sage_iterated_mat_vec_mul(len(A[0]),k,A,B,g_vec,p^(prec+2)))
+		return vector(sage_iterated_mat_vec_mul(len(A[0]),k,A,B,g_vec,p^(prec+arithmetic_precision_increase)))
 	for j in range(1,k+1):
 		g_vec *= A - j *B
 	return g_vec

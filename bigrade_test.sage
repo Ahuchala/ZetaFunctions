@@ -4,6 +4,11 @@
 # USE_CYTHON = True
 USE_CYTHON = False
 
+
+# whether to use QQ instead of Z/p^r precision in intermediate arithmetic, mainly for debugging
+USE_RATIONAL_ARITHMETIC = False
+# USE_RATIONAL_ARITHMETIC = True
+
 # poly_list = list(var('f_%d' % i) for i in range(num_poly))
 
 # Z = V(f1,..,fc)
@@ -21,18 +26,19 @@ USE_CYTHON = False
 
 # number of hypersurfaces in complete intersection
 
-# num_poly = 1
-num_poly = 2
+num_poly = 1
+# num_poly = 2
 
-p = 11
+
+p = Primes().next(2^12)
 # p = 10193
-prec = 2
-
+prec = 1
+arithmetic_precision_increase = 3
 
 load("mat_mul.sage")
 
-R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
-# R.<x_0,x_1,x_2,y_1> = QQ[]
+# R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+R.<x_0,x_1,x_2,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1> = QQ[]
 
@@ -51,16 +57,16 @@ y_vars = gens[n+1:]
 # J_p,m consists of p copies of y_i and sum_d_i copies of x_j
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
-f = sum([gen^3 for gen in x_vars])
+# f = sum([gen^2 for gen in x_vars])
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 
 
+# g = sum([gen^2 for gen in x_vars])
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
-g = x_0^2 + x_1^2 + x_2^2 + x_3^2
 # g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # h = x_0*x_1 + x_1*x_2 + x_2*x_3
 
-# f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2
+f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2
 
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 # f = x_0^4+x_0^3*x_1+x_0*x_1^3+x_0^2*x_1*x_2+x_0*x_1^2*x_2+x_1^3*x_2+x_0^2*x_2^2+x_0*x_2^3+x_1*x_2^3+x_0*x_1*x_2*x_3+x_2^3*x_3+x_0^2*x_3^2+x_0*x_1*x_3^2+x_1*x_2*x_3^2+x_0*x_3^3+x_1*x_3^3+x_2*x_3^3
@@ -76,7 +82,7 @@ if num_poly == 2:
 
 # todo: check if no rational points?
 
-d = [_.degree() for _ in poly_list]
+degree_of_polynomials = [_.degree() for _ in poly_list]
 m = sum([f.degree() for f in poly_list]) - n - 1
 
 F = sum([y_vars[i] * poly_list[i] for i in range(num_poly)])
@@ -92,6 +98,7 @@ assert p in Primes(), f'Warning: {p} is not prime'
 
 
 
+# todo: maybe use .dict() instead?
 def monomial_to_vector(m):
     return list(m.exponents()[0])
 
@@ -99,16 +106,24 @@ def vector_to_monomial(v):
     return prod([gens[i]^v[i] for i in range(n+num_poly+1)])
 
 
-def monomial_degree(m):
+def monomial_degree(monomial):
 #   e looks like  [(1, 1, 1, 1, 1)]
-    e = m.exponents()[0]
-#   x_i contribute (0, sum(e[:n]))
-#   y_i contribute (sum(e[n:],sum([-poly_list[i].degree() for i in range(num_poly)] ))
-    return [sum(e[n+1:]),  sum(e[:n+1]) +     sum([e[i+n+1]*-d[i] for i in range(num_poly)] )]
+    e = monomial.exponents()[0]
+#   x_i contribute (0, e[i])
+#   y_i contribute (e[i+n+1],-poly_list[i].degree()] ))
+    return [sum(e[n+1:]), sum(e[:n+1]) + sum([e[i+n+1]*-degree_of_polynomials[i] for i in range(num_poly)] )]
+
+# for a monomial in vector form
+def pole_order_vector(vec):
+    return sum(vec[n+1:])
+
+# redundant method
+def pole_order_monomial(monomial):
+    return pole_order(monomial)
 
 # each monomial is of the form m / F^j; returns j
-def pole_order(m):
-    e = m.exponents()[0]
+def pole_order(monomial):
+    e = monomial.exponents()[0]
     return sum(e[n+1:])
 
 
@@ -124,10 +139,16 @@ assert str(macaulay2(s)) == "true", f'Warning: F not smooth modulo {p}'
 
 
 # Macaulay2 code to run to compute Griffiths ring
-s = f'''
-k = ZZ/{p};
+s = ''
+if USE_RATIONAL_ARITHMETIC:
+    s += f'''
+    k = QQ;'''
+else:
+    s += f'''
+    k = ZZ/{p};'''
+s += f'''
 R = k[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
-{str([(1,-i) for i in d])[1:-1].replace('(','{').replace(')','}')}}}];
+{str([(1,-i) for i in degree_of_polynomials])[1:-1].replace('(','{').replace(')','}')}}}];
 F={sum([y_vars[i] * poly_list[i] for i in range(num_poly)])};
 J = R/ideal jacobian F;
 for i from 0 to {n-num_poly} list toString basis({{i,{m}}}, J)
@@ -141,15 +162,24 @@ for _ in t:
         eval("B.append(R(" + _ +"))")
 print(B)
 
+# I believe this is the dimension of the variety V(f_1..f_c)
+# so... n - num_poly?
 max_cohomology_pole_order = max([pole_order(_) for _ in B])
+assert max_cohomology_pole_order == n - num_poly # just for my sanity
 
 # Macaulay2 code to run to compute P1
 # Note that this is actually U_{1,0} rather than U_{1,m}
 # since we need U_{1,0}*P_n in P_{n+1}
-s = f'''
-k = ZZ/{p};
+s = ''
+if USE_RATIONAL_ARITHMETIC:
+    s += f'''
+    k = QQ;'''
+else:
+    s += f'''
+    k = ZZ/{p};'''
+s += f'''
 R = k[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
-{str([(1,-i) for i in d])[1:-1].replace('(','{').replace(')','}')}}}];
+{str([(1,-i) for i in degree_of_polynomials])[1:-1].replace('(','{').replace(')','}')}}}];
 toString basis({{1,{0}}}, R)
 '''
 t = str(macaulay2(s))
@@ -167,7 +197,7 @@ P1_pts = [monomial_to_vector(_) for _ in P1]
 s = f'''
 k = ZZ/{p};
 R = k[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
-{str([(1,-i) for i in d])[1:-1].replace('(','{').replace(')','}')}}}];
+{str([(1,-i) for i in degree_of_polynomials])[1:-1].replace('(','{').replace(')','}')}}}];
 toString basis({{{n},{-2}}}, R)
 '''
 # toString basis({{{n},{m}}}, R)
@@ -251,7 +281,7 @@ def to_ug(frobenius_of_Bi):
         c = hdict[etuple]
         # todo: save on divisibility?
 
-        # python uses function scope?
+        # python uses function scope
         # g = Pn_pts[0]
         for g_vec in Pn_pts:
             if all([vector[i] >= g_vec[i] for i in range(n+num_poly+1)]):
@@ -303,7 +333,9 @@ def lift_poly(g):
             for i in range(n+num_poly+1):
                 term_i = r[i].dict()
                 for _ in term_i.keys():
-                    term_i[_] = (term_i[_]) % p^(2+prec) # this converts to ZZ/p^prec
+                    # note: this will cause issues for some primes. why?
+                    if not USE_RATIONAL_ARITHMETIC:
+                        term_i[_] = (term_i[_]) % p^(prec+arithmetic_precision_increase) # this converts to ZZ/p^prec
                 term[i] = R(term_i)
             lift_dict[monomial] = term
         monomial_lift = lift_dict[monomial]
@@ -405,7 +437,8 @@ for i in range(len(B)):
     h = frobenius_on_cohom(i,prec)
     htemp = 0
     for u,g in to_ug(h):
-        denom = factorial(pole_order(vector_to_monomial(u))+pole_order(g))
+        denom = factorial(pole_order_vector(u)+max_cohomology_pole_order+1)
+        # denom = factorial(pole_order(vector_to_monomial(u))+pole_order(g))
 
         print(u,g)
         # this is the slow step
@@ -444,7 +477,7 @@ for i in range(len(B)):
             summer += term
     
     for j in range(len(B)):
-        frob_matrix[i][j] = summer.monomial_coefficient(R(B[j])) * factorial(pole_order(B[j])+num_poly -1) #% p^prec
+        frob_matrix[i][j] = summer.monomial_coefficient(R(B[j])) * factorial(pole_order(B[j])+num_poly-1) #% p^prec
         
     print(B[i],summer)
 
