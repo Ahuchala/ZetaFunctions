@@ -1,5 +1,6 @@
 # %runfile mat_mul.pyx
 
+
 if USE_CYTHON:
 	load("mat_mul.pyx")
 
@@ -9,9 +10,13 @@ def multiply_matrix_vector(A,v):
     return vector(sage_mat_vec_mul(n,A,v))
 
 def mat_mul(A,B,k,g_vec):
+	if all([g_vec[i] == 0 for i in range(size_pn)]): #g_vec is zero
+		return g_vec
+
 	# maybe escape if j is small
 	if USE_CYTHON and k > 5:
 		return vector(sage_iterated_mat_vec_mul(len(A[0]),k,A,B,g_vec,p^(prec+arithmetic_precision_increase)))
+	
 	for j in range(1,k+1):
 		g_vec *= A - j *B
 	return g_vec

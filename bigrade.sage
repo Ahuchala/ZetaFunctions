@@ -1,3 +1,14 @@
+# import itertools
+# import numpy as np
+
+# USE_CYTHON = True
+USE_CYTHON = False
+
+
+# whether to use QQ instead of Z/p^r precision in intermediate arithmetic, mainly for debugging
+USE_RATIONAL_ARITHMETIC = False
+# USE_RATIONAL_ARITHMETIC = True
+
 # poly_list = list(var('f_%d' % i) for i in range(num_poly))
 
 # Z = V(f1,..,fc)
@@ -15,17 +26,21 @@
 
 # number of hypersurfaces in complete intersection
 
-# num_poly = 1
-num_poly = 2
-
-p = 5
-# p = 10193
-prec = 2
+num_poly = 1
+# num_poly = 2
 
 
 
-R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
-# R.<x_0,x_1,x_2,y_1> = QQ[]
+# p = Primes().next(2^13)
+p = 7
+prec = 2 # todo: work this out
+arithmetic_precision_increase = 2 # todo: work this out too
+prec_arithmetic = p^(arithmetic_precision_increase+prec)
+
+load("mat_mul.sage")
+
+# R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+R.<x_0,x_1,x_2,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1> = QQ[]
 
@@ -44,12 +59,13 @@ y_vars = gens[n+1:]
 # J_p,m consists of p copies of y_i and sum_d_i copies of x_j
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
-# f = sum([gen^3 for gen in x_vars])
+f = sum([gen^3 for gen in x_vars])
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 
+
+# g = sum([gen^2 for gen in x_vars])
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
-f = x_0^2 + x_1^2 + x_2^2 + x_3^2
-g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+# g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # h = x_0*x_1 + x_1*x_2 + x_2*x_3
 
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2
@@ -68,7 +84,7 @@ if num_poly == 2:
 
 # todo: check if no rational points?
 
-d = [_.degree() for _ in poly_list]
+degree_of_polynomials = [_.degree() for _ in poly_list]
 m = sum([f.degree() for f in poly_list]) - n - 1
 
 F = sum([y_vars[i] * poly_list[i] for i in range(num_poly)])
@@ -84,23 +100,59 @@ assert p in Primes(), f'Warning: {p} is not prime'
 
 
 
+# todo: maybe use .dict() instead?
 def monomial_to_vector(m):
     return list(m.exponents()[0])
 
 def vector_to_monomial(v):
     return prod([gens[i]^v[i] for i in range(n+num_poly+1)])
 
+def vector_addition(u,v):
+    return tuple([u[i] + v[i] for i in range(n+num_poly+1)])
 
-def monomial_degree(m):
+# given constant and a dict of a polynomial g, returns (c * g).dict()
+def multiplication_by_scalar(c,g_dict):
+    return_dict = {}
+    for g_key in g_dict:
+        return_dict[g_key] = c * g_dict[g_key]
+    return return_dict
+
+# given two polynomial dicts, returns the dict of their product
+def polynomial_multiplication(g_dict,h_dict):
+    return_dict = {}
+    # foil it...
+    for g_key in g_dict:
+        g_val = g_dict[g_key]
+        for h_key in h_dict:
+            return_dict[vector_addition(g_key,h_key)] = g_val * h_dict[h_key]
+    return return_dict
+
+# divides by prod(gens)
+def divide_by_x0xn(g_dict):
+    return_dict = {}
+    for g_key in g_dict:
+        return_dict[tuple([g_key[i]-1 for i in range(len(g_key))])] = g_dict[g_key]
+    return return_dict
+
+
+def monomial_degree(monomial):
 #   e looks like  [(1, 1, 1, 1, 1)]
-    e = m.exponents()[0]
-#   x_i contribute (0, sum(e[:n]))
-#   y_i contribute (sum(e[n:],sum([-poly_list[i].degree() for i in range(num_poly)] ))
-    return [sum(e[n+1:]),  sum(e[:n+1]) +     sum([e[i+n+1]*-d[i] for i in range(num_poly)] )]
+    e = monomial.exponents()[0]
+#   x_i contribute (0, e[i])
+#   y_i contribute (e[i+n+1],-poly_list[i].degree()] ))
+    return [sum(e[n+1:]), sum(e[:n+1]) + sum([e[i+n+1]*-degree_of_polynomials[i] for i in range(num_poly)] )]
+
+# for a monomial in vector form
+def pole_order_vector(vec):
+    return sum(vec[n+1:])
+
+# redundant method
+def pole_order_monomial(monomial):
+    return pole_order(monomial)
 
 # each monomial is of the form m / F^j; returns j
-def pole_order(m):
-    e = m.exponents()[0]
+def pole_order(monomial):
+    e = monomial.exponents()[0]
     return sum(e[n+1:])
 
 
@@ -116,10 +168,16 @@ assert str(macaulay2(s)) == "true", f'Warning: F not smooth modulo {p}'
 
 
 # Macaulay2 code to run to compute Griffiths ring
-s = f'''
-k = ZZ/{p};
+s = ''
+if USE_RATIONAL_ARITHMETIC:
+    s += f'''
+    k = QQ;'''
+else:
+    s += f'''
+    k = ZZ/{p};'''
+s += f'''
 R = k[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
-{str([(1,-i) for i in d])[1:-1].replace('(','{').replace(')','}')}}}];
+{str([(1,-i) for i in degree_of_polynomials])[1:-1].replace('(','{').replace(')','}')}}}];
 F={sum([y_vars[i] * poly_list[i] for i in range(num_poly)])};
 J = R/ideal jacobian F;
 for i from 0 to {n-num_poly} list toString basis({{i,{m}}}, J)
@@ -133,15 +191,22 @@ for _ in t:
         eval("B.append(R(" + _ +"))")
 print(B)
 
+
 max_cohomology_pole_order = max([pole_order(_) for _ in B])
 
 # Macaulay2 code to run to compute P1
 # Note that this is actually U_{1,0} rather than U_{1,m}
 # since we need U_{1,0}*P_n in P_{n+1}
-s = f'''
-k = ZZ/{p};
+s = ''
+if USE_RATIONAL_ARITHMETIC:
+    s += f'''
+    k = QQ;'''
+else:
+    s += f'''
+    k = ZZ/{p};'''
+s += f'''
 R = k[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
-{str([(1,-i) for i in d])[1:-1].replace('(','{').replace(')','}')}}}];
+{str([(1,-i) for i in degree_of_polynomials])[1:-1].replace('(','{').replace(')','}')}}}];
 toString basis({{1,{0}}}, R)
 '''
 t = str(macaulay2(s))
@@ -159,7 +224,7 @@ P1_pts = [monomial_to_vector(_) for _ in P1]
 s = f'''
 k = ZZ/{p};
 R = k[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
-{str([(1,-i) for i in d])[1:-1].replace('(','{').replace(')','}')}}}];
+{str([(1,-i) for i in degree_of_polynomials])[1:-1].replace('(','{').replace(')','}')}}}];
 toString basis({{{n},{-2}}}, R)
 '''
 # toString basis({{{n},{m}}}, R)
@@ -185,35 +250,47 @@ I = F.jacobian_ideal()
 J = R.quotient_ring(I)
 
 
-# returns frobenius of polynomial g
+
+def sigma(g,return_as_dict = False):
+    return sigma_dict(g.dict(),return_as_dict)
+
+
+# returns frobenius of polynomial dict g.dict()
 # e.g x + y -> x^p + y^p
-def sigma(g):
-    g_dict = g.dict()
+def sigma_dict(g_dict,return_as_dict = False):
     g_dict_keys = set(g_dict.keys())
     for key in g_dict_keys:
-        g_dict[tuple([k*p for k in key])] = g_dict.pop(key)
+        g_dict[tuple([k*p for k in key])] = g_dict.pop(key) # if Fq is eventually implemented this will change
+    if return_as_dict:
+        return g_dict
     return R(g_dict)
-    # return sum([g.coefficient(monomial)* monomial^p for monomial in g.monomials()])
 
 # todo: make this return a dict instead of a polynomial
 # returns frobenius of logarithmic form g/f^d * omega
-def frobenius(g,prec=2):
+def frobenius(g,prec=2,return_as_dict = True):
     d = pole_order(g)
-    summer = 0
-    sigma_g = sigma(g)
+    summer_dict = {}
+    sigma_g_dict = sigma(g,True)
     fj = R(1)
+
     for j in range(prec):
 #        cacheing may be appropriate
-        numer = binomial(-d,j) * binomial(d+prec-1,d+j) * sigma_g*sigma(fj)
-        summer += numer
+        const = binomial(-d,j) * binomial(d+prec-1,d+j)
+        numer =  multiplication_by_scalar(const,polynomial_multiplication(sigma_g_dict,sigma(fj,True)))
+        summer_dict |= numer
+        # summer += numer
         fj *= F
-    return summer
+    if return_as_dict:
+        return summer_dict
+    return R(summer_dict)
 
 
+# returns as a dict
 def frobenius_on_cohom(i,prec = 2):
     g = R(B[i])*prod(gens)
     g = frobenius(g,prec)
-    return R(g *p^(n -1) / prod(gens))
+    # return R(g *p^(n -1) / prod(gens))
+    return multiplication_by_scalar(p^(n -1),divide_by_x0xn(g))
 
 
 reduction_dict = {}
@@ -228,8 +305,8 @@ def to_ug(frobenius_of_Bi):
     # todo: make optimal choices of which g
 
     # (x_0^5*x_1*y_1^2).dict() looks like {(5, 1, 0, 2): 1}
-    hdict = frobenius_of_Bi.dict()
-
+    # hdict = frobenius_of_Bi.dict()
+    hdict = frobenius_of_Bi
     
 
     while hdict: # is_nonempty
@@ -243,7 +320,7 @@ def to_ug(frobenius_of_Bi):
         c = hdict[etuple]
         # todo: save on divisibility?
 
-        # python uses function scope?
+        # python uses function scope
         # g = Pn_pts[0]
         for g_vec in Pn_pts:
             if all([vector[i] >= g_vec[i] for i in range(n+num_poly+1)]):
@@ -291,7 +368,15 @@ def lift_poly(g):
         if not monomial in lift_dict.keys():
             c = J(monomial).lift()
             r = (monomial-c).lift(xI)
-            lift_dict[monomial] = r
+            term = [0 for _ in range(n+num_poly+1)]
+            for i in range(n+num_poly+1):
+                term_i = r[i].dict()
+                for _ in term_i.keys():
+                    # note: this will cause issues for some primes. why?
+                    if not USE_RATIONAL_ARITHMETIC:
+                        term_i[_] = (term_i[_]) % p^(prec+arithmetic_precision_increase) # this converts to ZZ/p^prec
+                term[i] = R(term_i)
+            lift_dict[monomial] = term
         monomial_lift = lift_dict[monomial]
         c = g.monomial_coefficient(monomial)
         for i in range(n+num_poly+1):
@@ -318,8 +403,15 @@ def Ruv_u_helper(v,g):
 
 
 def compute_Ruv(v):
-    Ruv_u_mat = [list(matrix(size_pn)) for i in range(n+num_poly+1)]
-    Ruv_const_mat = list(matrix(size_pn))
+    if USE_RATIONAL_ARITHMETIC:
+        Ruv_u_mat = [list(matrix(QQ,size_pn,size_pn)) for i in range(n+num_poly+1)]
+        Ruv_const_mat = list(matrix(QQ,size_pn,size_pn))
+
+    else:
+        Ruv_u_mat = [list(matrix(GF(prec_arithmetic),size_pn,size_pn)) for i in range(n+num_poly+1)]
+        Ruv_const_mat = list(matrix(GF(prec_arithmetic),size_pn,size_pn))
+
+
 
     for i in range(size_pn):
         g = Pn[i]
@@ -346,15 +438,19 @@ def compute_vk(u):
     v = best_v
     k = best_k
     # I think I could just count the y_i's
-    if pole_order(vector_to_monomial([u[i] - k*v[i] for i in range(n+num_poly+1)])) == 0: #m?
+    if pole_order_vector([u[i] - k*v[i] for i in range(n+num_poly+1)]) == 0: #m?
         # print("error: overcounted")
         k -= 1
     return v,k
 
 def reduce_griffiths_dwork(u,g):
     g_vec = vector(matrix(to_pn_basis(g)))
+
+    # todo: work out precise bounds!
+    # g_vec = np.matrix(to_pn_basis(g),dtype=np.int32)
+
     # todo: speed up!
-    while(pole_order(vector_to_monomial(u)))>max_cohomology_pole_order:
+    while(pole_order_vector(u))>max_cohomology_pole_order:
     # while (u not in P1_pts):
         print(u)
 
@@ -368,21 +464,27 @@ def reduce_griffiths_dwork(u,g):
         E = C + sum([u[i]* D[i] for i in range(n+num_poly+1)])
         F = sum([v[i] * D[i] for i in range(n+num_poly+1)])
 
-        for ind in range(1,k+1):
+        g_vec = mat_mul(E,F,k,g_vec)
+        # for ind in range(1,k+1):
             # left g -> g A
-            g_vec *= (E-ind*F)
-            # g_vec *=  (C + sum([(u[i]-ind*v[i]) * D[i] for i in range(n)]))
+            # g_vec *= np.matrix(E-ind*F,dtype=np.int32)
         u = [u[i] - k*v[i] for i in range(n+num_poly+1)]
-    g = from_pn_basis(vector(g_vec))
+    # print(g_vec)
+    # g_list = [R(_) for _ in g_list]
+    # g = from_pn_basis(g_vec.tolist()[0])
+    g = from_pn_basis(g_vec)
+
     
     return u,g
 
+# todo: remove zero matrices which seem to all correspond to y_i
 
 for i in range(len(B)):
     h = frobenius_on_cohom(i,prec)
     htemp = 0
     for u,g in to_ug(h):
-        denom = factorial(pole_order(vector_to_monomial(u))+pole_order(g))
+        denom = factorial(pole_order_vector(u)+max_cohomology_pole_order+1)
+        # denom = factorial(pole_order(vector_to_monomial(u))+pole_order(g))
 
         print(u,g)
         # this is the slow step
@@ -421,7 +523,7 @@ for i in range(len(B)):
             summer += term
     
     for j in range(len(B)):
-        frob_matrix[i][j] = summer.monomial_coefficient(R(B[j])) * factorial(pole_order(B[j])+num_poly -1) #% p^prec
+        frob_matrix[i][j] = summer.monomial_coefficient(R(B[j])) * factorial(pole_order(B[j])+num_poly-1) #% p^prec
         
     print(B[i],summer)
 

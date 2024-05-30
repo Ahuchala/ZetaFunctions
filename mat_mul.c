@@ -63,13 +63,18 @@ DTYPE * c_iterated_mat_vec_mul(int n, int r, DTYPE * A, DTYPE * B, DTYPE * v, DT
     for (k = 1; k < r+1; k++) {
         for(i = 0; i < n; i++) {
             for(j = 0; j < n; j++) {
-                new_vec[i] += A[i+n*j] * old_vec[j] - k*B[i+n*j] * old_vec[j];
+                new_vec[i] += (A[i+n*j] * old_vec[j] - k*B[i+n*j] * old_vec[j]);
+                new_vec[i] %= p_prec;
             }
         }
         for(i = 0; i < n; i++) {
-            old_vec[i] = new_vec[i] % p_prec;
+            old_vec[i] = new_vec[i];
             new_vec[i] = 0;
         }
+        // for(i = 0; i < n; i++) {
+        //     old_vec[i] = new_vec[i] % p_prec;
+        //     new_vec[i] = 0;
+        // }
     }
     free(new_vec);
     return old_vec;

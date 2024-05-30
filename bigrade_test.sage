@@ -31,10 +31,10 @@ num_poly = 1
 
 
 
-p = Primes().next(2^16)
-# p = 5
-prec = 1
-arithmetic_precision_increase = 1
+# p = Primes().next(2^13)
+p = 7
+prec = 2 # todo: work this out
+arithmetic_precision_increase = 2 # todo: work this out too
 prec_arithmetic = p^(arithmetic_precision_increase+prec)
 
 load("mat_mul.sage")
@@ -191,10 +191,8 @@ for _ in t:
         eval("B.append(R(" + _ +"))")
 print(B)
 
-# I believe this is the dimension of the variety V(f_1..f_c)
-# so... n - num_poly?
+
 max_cohomology_pole_order = max([pole_order(_) for _ in B])
-assert max_cohomology_pole_order == n - num_poly # just for my sanity
 
 # Macaulay2 code to run to compute P1
 # Note that this is actually U_{1,0} rather than U_{1,m}
