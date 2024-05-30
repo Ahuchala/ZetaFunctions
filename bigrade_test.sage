@@ -59,7 +59,7 @@ y_vars = gens[n+1:]
 # J_p,m consists of p copies of y_i and sum_d_i copies of x_j
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
-f = sum([gen^3 for gen in x_vars])
+f = sum([gen^6 for gen in x_vars])
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 
 
@@ -225,7 +225,7 @@ s = f'''
 k = ZZ/{p};
 R = k[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
 {str([(1,-i) for i in degree_of_polynomials])[1:-1].replace('(','{').replace(')','}')}}}];
-toString basis({{{n},{-2}}}, R)
+toString basis({{{n},{m-n}}}, R)
 '''
 # toString basis({{{n},{m}}}, R)
 
