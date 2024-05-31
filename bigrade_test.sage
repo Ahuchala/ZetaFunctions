@@ -28,12 +28,12 @@ USE_RATIONAL_ARITHMETIC = False
 
 num_poly = 1
 # num_poly = 2
+# num_poly = 3
 
 
-
-# p = Primes().next(2^13)
+# p = Primes().next(2^16)
 p = 7
-prec = 2 # todo: work this out
+prec = 2# todo: work this out
 arithmetic_precision_increase = 2 # todo: work this out too
 prec_arithmetic = p^(arithmetic_precision_increase+prec)
 
@@ -49,6 +49,8 @@ R.<x_0,x_1,x_2,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,x_5,y_1,y_2> = QQ[]
+# R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2,y_3> = QQ[]
+
 
 
 gens = R.gens()
@@ -69,6 +71,9 @@ f = sum([gen^3 for gen in x_vars])
 # g = sum([gen^2 for gen in x_vars])
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
 # g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+# g = sum([x_vars[i] * x_vars[(i+1)%(n+1)] for i in range(n+1)])+x_0^2
+# h = sum([x_vars[i] * x_vars[(i+2)%(n+1)] for i in range(n+1)])-x_1^2
+# print(f,g,h)
 # h = x_0*x_1 + x_1*x_2 + x_2*x_3
 
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2
@@ -83,7 +88,8 @@ poly_list = [f]
 if num_poly == 2:
     f_0 = f; f_1 = g;
     poly_list = [f_0,f_1]
-# poly_list = [f,g,h]
+elif num_poly == 3:
+    poly_list = [f,g,h]
 
 # todo: check if no rational points?
 
@@ -157,6 +163,10 @@ def pole_order_monomial(monomial):
 def pole_order(monomial):
     e = monomial.exponents()[0]
     return sum(e[n+1:])
+
+# run Macaulay2 programs
+
+
 
 
 # Macaulay2 code to check smoothness
@@ -366,7 +376,7 @@ def lift_poly(g):
     summer = (n+num_poly+1) * [0]
     for monomial in g.monomials():
 
-        if not monomial in lift_dict.keys():
+        if not monomial in lift_dict:
             c = J(monomial).lift()
             r = (monomial-c).lift(xI)
             term = [0 for _ in range(n+num_poly+1)]
@@ -477,35 +487,38 @@ def reduce_griffiths_dwork(u,g):
 
 reduce_to_B_dict = {}
 
+def compute_new_reduce_to_B_key(key):
+    monomial_list = [vector_to_monomial(key)]
+    summer = R(0)
+    while len(monomial_list) > 0:
+        term  = monomial_list[0]
+        monomial_list.remove(term)
+        if term not in QQ:  
+            print(term)
+            monomial = R(term.monomials()[0])
+            if not monomial in B:
+                if not monomial in reduction_dict:
+                    q = J(monomial).lift()
+                    r = monomial - q
+                    l = r.lift(I)
+                    temp = sum([l[i].derivative(gens[i]) for i in range(n+num_poly+1)])
+                    reduction_dict[monomial] = temp + q
+                # this could be implemented better
+                # but ultimately should be done in M2 anyways
+                result = term.monomial_coefficient(monomial)* reduction_dict[monomial]
+                h = sum(monomial_list) + result
+                monomial_list = [R(h.monomial_coefficient(monomial)) * monomial for monomial in h.monomials()]
+            else:
+                summer += term
+        else:
+            summer += term
+    reduce_to_B_dict[key] = summer
+
 def reduce_to_B(h_dict):
-    # monomial_list = list(h_dict.keys())
     ans = R(0)
-    for key in h_dict.keys():
-        if not key in reduce_to_B_dict.keys():
-            monomial_list = [vector_to_monomial(key)]
-            summer = R(0)
-            while len(monomial_list) > 0:
-                term  = monomial_list[0]
-                monomial_list.remove(term)
-                if term not in QQ:  
-                    print(term)
-                    monomial = R(term.monomials()[0])
-                    if not monomial in B:
-                        if not monomial in reduction_dict.keys():
-                            q = J(monomial).lift()
-                            r = monomial - q
-                            l = r.lift(I)
-                            temp = sum([l[i].derivative(gens[i]) for i in range(n+num_poly+1)])
-                            reduction_dict[monomial] = temp + q
-                        # this should be implemented better
-                        result = term.monomial_coefficient(monomial)* reduction_dict[monomial]
-                        h = sum(monomial_list) + result
-                        monomial_list = [R(h.monomial_coefficient(monomial)) * monomial for monomial in h.monomials()]
-                    else:
-                        summer += term
-                else:
-                    summer += term
-            reduce_to_B_dict[key] = summer
+    for key in h_dict:
+        if not key in reduce_to_B_dict:
+            compute_new_reduce_to_B_key(key)
         ans += reduce_to_B_dict[key] * h_dict[key]
     return ans
 
