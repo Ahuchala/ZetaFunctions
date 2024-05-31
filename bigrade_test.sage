@@ -31,8 +31,8 @@ num_poly = 1
 
 
 
-p = Primes().next(2^13)
-# p = 5
+# p = Primes().next(2^13)
+p = 7
 prec = 2 # todo: work this out
 arithmetic_precision_increase = 2 # todo: work this out too
 prec_arithmetic = p^(arithmetic_precision_increase+prec)
@@ -62,6 +62,7 @@ y_vars = gens[n+1:]
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
 f = sum([gen^3 for gen in x_vars])
+# f = sum([gen^2 for gen in x_vars])
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 
 
@@ -477,7 +478,7 @@ def reduce_griffiths_dwork(u,g):
 reduce_to_B_dict = {}
 
 def reduce_to_B(h_dict):
-    monomial_list = list(h_dict.keys())
+    # monomial_list = list(h_dict.keys())
     ans = R(0)
     for key in h_dict.keys():
         if not key in reduce_to_B_dict.keys():
@@ -488,8 +489,6 @@ def reduce_to_B(h_dict):
                 monomial_list.remove(term)
                 if term not in QQ:  
                     print(term)
-                    if len(term.monomials())>1:
-                        print('error: too many terms')
                     monomial = R(term.monomials()[0])
                     if not monomial in B:
                         if not monomial in reduction_dict.keys():
@@ -515,7 +514,7 @@ for i in range(len(B)):
     h = frobenius_on_cohom(i,prec)
     htemp = 0
     for u,g in to_ug(h):
-        denom = factorial(pole_order_vector(u)+max_cohomology_pole_order+1)
+        denom = factorial(pole_order_vector(u)+max_cohomology_pole_order)
 
         print(u,g)
         # this is the slow step
@@ -526,6 +525,7 @@ for i in range(len(B)):
 
     # takes h from coker (x dF/dxi) to coker (dF/dxi)
     summer = reduce_to_B(htemp.dict())
+
     
     for j in range(len(B)):
         frob_matrix[i][j] = summer.monomial_coefficient(R(B[j])) * factorial(pole_order(B[j])+num_poly-1) #% p^prec
