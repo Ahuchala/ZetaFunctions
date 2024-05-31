@@ -169,6 +169,13 @@ def pole_order(monomial):
 # run Macaulay2 programs
 
 
+def run_macualay2_program(function_name, args):
+    file_name = "compute_griffiths.m2"
+    ls = ["M2", "--script", file_name, function_name]
+    for arg in args:
+        ls.append(str(arg))
+    a = subprocess.run(ls,capture_output=True).stdout
+    return a
 
 
 # Macaulay2 code to check smoothness
@@ -199,13 +206,6 @@ assert str(macaulay2(s)) == "true", f'Warning: F not smooth modulo {p}'
 # '''
 # t = str(macaulay2(s))
 
-def run_macualay2_program(function_name, args):
-    file_name = "compute_griffiths.m2"
-    ls = ["M2", "--script", file_name, function_name]
-    for arg in args:
-        ls.append(str(arg))
-    a = subprocess.run(ls,capture_output=True).stdout
-    return a
 
 a = str(run_macualay2_program("computeGriffithsRing", [n,f"{poly_list}"]))
 t = a[2:-3]
@@ -224,19 +224,11 @@ max_cohomology_pole_order = max([pole_order(_) for _ in B])
 # Macaulay2 code to run to compute P1
 # Note that this is actually U_{1,0} rather than U_{1,m}
 # since we need U_{1,0}*P_n in P_{n+1}
-s = ''
-if USE_RATIONAL_ARITHMETIC:
-    s += f'''
-    k = QQ;'''
-else:
-    s += f'''
-    k = ZZ/{p};'''
-s += f'''
-R = k[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
-{str([(1,-i) for i in degree_of_polynomials])[1:-1].replace('(','{').replace(')','}')}}}];
-toString basis({{1,{0}}}, R)
-'''
-t = str(macaulay2(s))
+
+a = str(run_macualay2_program("computeP1", [n,f"{poly_list}"]))
+t = a[2:-3]
+
+# t = str(macaulay2(s))
 t = t.replace("{","").replace("}","").replace("^","**").replace(" ","").split("matrix")[1:]
 t = "".join(t).split(",")
 P1 = []
