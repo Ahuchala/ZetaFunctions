@@ -31,8 +31,8 @@ num_poly = 1
 
 
 
-# p = Primes().next(2^13)
-p = 17
+p = Primes().next(2^13)
+# p = 5
 prec = 2 # todo: work this out
 arithmetic_precision_increase = 2 # todo: work this out too
 prec_arithmetic = p^(arithmetic_precision_increase+prec)
@@ -40,8 +40,8 @@ prec_arithmetic = p^(arithmetic_precision_increase+prec)
 load("mat_mul.sage")
 
 # R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
-# R.<x_0,x_1,x_2,y_1> = QQ[]
-R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
+R.<x_0,x_1,x_2,y_1> = QQ[]
+# R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,x_5,y_1> = QQ[]
 
@@ -61,7 +61,7 @@ y_vars = gens[n+1:]
 # J_p,m consists of p copies of y_i and sum_d_i copies of x_j
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
-f = sum([gen^4 for gen in x_vars])
+f = sum([gen^3 for gen in x_vars])
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 
 
@@ -242,8 +242,6 @@ for _ in t:
 # print(Pn)
 size_pn = len(Pn)
 Pn_pts = [monomial_to_vector(mon) for mon in Pn]
-
-
 
 xI = R.ideal([gen *F.derivative(gen) for gen in gens])
 
@@ -449,7 +447,6 @@ def reduce_griffiths_dwork(u,g):
     g_vec = vector(matrix(to_pn_basis(g)))
 
     # todo: work out precise bounds!
-    # g_vec = np.matrix(to_pn_basis(g),dtype=np.int32)
 
     # todo: speed up!
     while(pole_order_vector(u))>max_cohomology_pole_order:
@@ -467,13 +464,9 @@ def reduce_griffiths_dwork(u,g):
         F = sum([v[i] * D[i] for i in range(n+num_poly+1)])
 
         g_vec = mat_mul(E,F,k,g_vec)
-        # for ind in range(1,k+1):
-            # left g -> g A
-            # g_vec *= np.matrix(E-ind*F,dtype=np.int32)
+ 
         u = [u[i] - k*v[i] for i in range(n+num_poly+1)]
-    # print(g_vec)
-    # g_list = [R(_) for _ in g_list]
-    # g = from_pn_basis(g_vec.tolist()[0])
+
     g = from_pn_basis(g_vec)
 
     
@@ -481,12 +474,48 @@ def reduce_griffiths_dwork(u,g):
 
 # todo: remove zero matrices which seem to all correspond to y_i
 
+reduce_to_B_dict = {}
+
+def reduce_to_B(h_dict):
+    monomial_list = list(h_dict.keys())
+    ans = R(0)
+    for key in h_dict.keys():
+        if not key in reduce_to_B_dict.keys():
+            monomial_list = [vector_to_monomial(key)]
+            summer = R(0)
+            while len(monomial_list) > 0:
+                term  = monomial_list[0]
+                monomial_list.remove(term)
+                if term not in QQ:  
+                    print(term)
+                    if len(term.monomials())>1:
+                        print('error: too many terms')
+                    monomial = R(term.monomials()[0])
+                    if not monomial in B:
+                        if not monomial in reduction_dict.keys():
+                            q = J(monomial).lift()
+                            r = monomial - q
+                            l = r.lift(I)
+                            temp = sum([l[i].derivative(gens[i]) for i in range(n+num_poly+1)])
+                            reduction_dict[monomial] = temp + q
+                        # this should be implemented better
+                        result = term.monomial_coefficient(monomial)* reduction_dict[monomial]
+                        h = sum(monomial_list) + result
+                        monomial_list = [R(h.monomial_coefficient(monomial)) * monomial for monomial in h.monomials()]
+                    else:
+                        summer += term
+                else:
+                    summer += term
+            reduce_to_B_dict[key] = summer
+        ans += reduce_to_B_dict[key] * h_dict[key]
+    return ans
+
+
 for i in range(len(B)):
     h = frobenius_on_cohom(i,prec)
     htemp = 0
     for u,g in to_ug(h):
         denom = factorial(pole_order_vector(u)+max_cohomology_pole_order+1)
-        # denom = factorial(pole_order(vector_to_monomial(u))+pole_order(g))
 
         print(u,g)
         # this is the slow step
@@ -494,35 +523,9 @@ for i in range(len(B)):
 
 
         htemp += vector_to_monomial(u) * g // denom
-    h = htemp
 
-    summer = R(0)
-    monomial_list = [R(h.monomial_coefficient(monomial)) * monomial for monomial in h.monomials()]
-    while len(monomial_list) > 0:
-        term  = monomial_list[0]
-        monomial_list.remove(term)
-        # print(term)
-        if term not in QQ:  
-            print(term)
-            if len(term.monomials())>1:
-                print('error: too many terms')
-            monomial = R(term.monomials()[0])
-            if not monomial in B:
-                if not monomial in reduction_dict.keys():
-                    q = J(monomial).lift()
-                    r = monomial - q
-                    l = r.lift(I)
-                    temp = sum([l[i].derivative(gens[i]) for i in range(n+num_poly+1)])
-                    reduction_dict[monomial] = temp + q
-                # this should be implemented better
-                result = term.monomial_coefficient(monomial)* reduction_dict[monomial]
-                h = sum(monomial_list) + result
-                monomial_list = [R(h.monomial_coefficient(monomial)) * monomial for monomial in h.monomials()]
-                
-            else:
-                summer += term
-        else:
-            summer += term
+    # takes h from coker (x dF/dxi) to coker (dF/dxi)
+    summer = reduce_to_B(htemp.dict())
     
     for j in range(len(B)):
         frob_matrix[i][j] = summer.monomial_coefficient(R(B[j])) * factorial(pole_order(B[j])+num_poly-1) #% p^prec
