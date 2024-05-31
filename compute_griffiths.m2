@@ -30,7 +30,16 @@ return for i from 0 to (n-numPoly) list toString basis({i,m}, J)
 );
 
 
-print computeGriffithsRing(2,"[x_0^2]");
+parseInput = () -> (
+    function_name = value(scriptCommandLine#1);
+    arg_1 = value(scriptCommandLine#2);
+    arg_2 = toString scriptCommandLine#3;
+    return function_name(arg_1,arg_2);
+)
+
+print parseInput();
+
+-- print computeGriffithsRing(2,"[x_0^2]");
 
 --function_name = value(scriptCommandLine#1)
 

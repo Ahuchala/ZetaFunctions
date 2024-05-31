@@ -1,3 +1,5 @@
+import subprocess
+
 # import itertools
 # import numpy as np
 
@@ -26,8 +28,8 @@ USE_RATIONAL_ARITHMETIC = False
 
 # number of hypersurfaces in complete intersection
 
-num_poly = 1
-# num_poly = 2
+# num_poly = 1
+num_poly = 2
 # num_poly = 3
 
 
@@ -39,8 +41,8 @@ prec_arithmetic = p^(arithmetic_precision_increase+prec)
 
 load("mat_mul.sage")
 
-# R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
-R.<x_0,x_1,x_2,y_1> = QQ[]
+R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+# R.<x_0,x_1,x_2,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,x_5,y_1> = QQ[]
@@ -63,14 +65,14 @@ y_vars = gens[n+1:]
 # J_p,m consists of p copies of y_i and sum_d_i copies of x_j
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
-f = sum([gen^3 for gen in x_vars])
-# f = sum([gen^2 for gen in x_vars])
+# f = sum([gen^3 for gen in x_vars])
+f = sum([gen^2 for gen in x_vars])
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 
 
 # g = sum([gen^2 for gen in x_vars])
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
-# g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # g = sum([x_vars[i] * x_vars[(i+1)%(n+1)] for i in range(n+1)])+x_0^2
 # h = sum([x_vars[i] * x_vars[(i+2)%(n+1)] for i in range(n+1)])-x_1^2
 # print(f,g,h)
@@ -181,21 +183,33 @@ assert str(macaulay2(s)) == "true", f'Warning: F not smooth modulo {p}'
 
 
 # Macaulay2 code to run to compute Griffiths ring
-s = ''
-if USE_RATIONAL_ARITHMETIC:
-    s += f'''
-    k = QQ;'''
-else:
-    s += f'''
-    k = ZZ/{p};'''
-s += f'''
-R = k[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
-{str([(1,-i) for i in degree_of_polynomials])[1:-1].replace('(','{').replace(')','}')}}}];
-F={sum([y_vars[i] * poly_list[i] for i in range(num_poly)])};
-J = R/ideal jacobian F;
-for i from 0 to {n-num_poly} list toString basis({{i,{m}}}, J)
-'''
-t = str(macaulay2(s))
+# s = ''
+# if USE_RATIONAL_ARITHMETIC:
+#     s += f'''
+#     k = QQ;'''
+# else:
+#     s += f'''
+#     k = ZZ/{p};'''
+# s += f'''
+# R = k[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
+# {str([(1,-i) for i in degree_of_polynomials])[1:-1].replace('(','{').replace(')','}')}}}];
+# F={sum([y_vars[i] * poly_list[i] for i in range(num_poly)])};
+# J = R/ideal jacobian F;
+# for i from 0 to {n-num_poly} list toString basis({{i,{m}}}, J)
+# '''
+# t = str(macaulay2(s))
+
+def run_macualay2_program(function_name, args):
+    file_name = "compute_griffiths.m2"
+    ls = ["M2", "--script", file_name, function_name]
+    for arg in args:
+        ls.append(str(arg))
+    a = subprocess.run(ls,capture_output=True).stdout
+    return a
+
+a = str(run_macualay2_program("computeGriffithsRing", [n,f"{poly_list}"]))
+t = a[2:-3]
+
 t = t.replace("{","").replace("}","").replace("^","**").replace(" ","").split("matrix")[1:]
 t = "".join(t).split(",")
 B = []
