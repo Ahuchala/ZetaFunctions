@@ -190,26 +190,11 @@ assert str(macaulay2(s)) == "true", f'Warning: F not smooth modulo {p}'
 
 
 # Macaulay2 code to run to compute Griffiths ring
-# s = ''
-# if USE_RATIONAL_ARITHMETIC:
-#     s += f'''
-#     k = QQ;'''
-# else:
-#     s += f'''
-#     k = ZZ/{p};'''
-# s += f'''
-# R = k[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
-# {str([(1,-i) for i in degree_of_polynomials])[1:-1].replace('(','{').replace(')','}')}}}];
-# F={sum([y_vars[i] * poly_list[i] for i in range(num_poly)])};
-# J = R/ideal jacobian F;
-# for i from 0 to {n-num_poly} list toString basis({{i,{m}}}, J)
-# '''
-# t = str(macaulay2(s))
-
 
 a = str(run_macualay2_program("computeGriffithsRing", [n,f"{poly_list}"]))
 t = a[2:-3]
 
+# todo: make this a method, probably with regex
 t = t.replace("{","").replace("}","").replace("^","**").replace(" ","").split("matrix")[1:]
 t = "".join(t).split(",")
 B = []
@@ -228,7 +213,6 @@ max_cohomology_pole_order = max([pole_order(_) for _ in B])
 a = str(run_macualay2_program("computeP1", [n,f"{poly_list}"]))
 t = a[2:-3]
 
-# t = str(macaulay2(s))
 t = t.replace("{","").replace("}","").replace("^","**").replace(" ","").split("matrix")[1:]
 t = "".join(t).split(",")
 P1 = []
@@ -239,17 +223,9 @@ for _ in t:
 
 P1_pts = [monomial_to_vector(_) for _ in P1]
 
-# Macaulay2 code to run to compute Pn
-s = f'''
-k = ZZ/{p};
-R = k[x_0..x_{n},y_1..y_{num_poly}, Degrees=>{{{n+1}:{{0,1}},
-{str([(1,-i) for i in degree_of_polynomials])[1:-1].replace('(','{').replace(')','}')}}}];
-toString basis({{{n},{-n}}}, R)
-'''
-# toString basis({{{n},{m}}}, R)
+a = str(run_macualay2_program("computePn", [n,f"{poly_list}"]))
+t = a[2:-3]
 
-# seems like it should be max_cohomology_pole_order instead of n
-t = str(macaulay2(s))
 t = t.replace("{","").replace("}","").replace("^","**").replace(" ","").split("matrix")[1:]
 t = "".join(t).split(",")
 Pn = []
