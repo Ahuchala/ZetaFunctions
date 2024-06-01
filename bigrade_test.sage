@@ -1,4 +1,5 @@
 import subprocess
+import re
 
 # import itertools
 # import numpy as np
@@ -28,21 +29,21 @@ USE_RATIONAL_ARITHMETIC = False
 
 # number of hypersurfaces in complete intersection
 
-# num_poly = 1
-num_poly = 2
+num_poly = 1
+# num_poly = 2
 # num_poly = 3
 
 
 # p = Primes().next(2^16)
-p = 7
+p = 17
 prec = 2# todo: work this out
 arithmetic_precision_increase = 2 # todo: work this out too
 prec_arithmetic = p^(arithmetic_precision_increase+prec)
 
 load("mat_mul.sage")
 
-R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
-# R.<x_0,x_1,x_2,y_1> = QQ[]
+# R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+R.<x_0,x_1,x_2,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,x_5,y_1> = QQ[]
@@ -65,14 +66,14 @@ y_vars = gens[n+1:]
 # J_p,m consists of p copies of y_i and sum_d_i copies of x_j
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
-# f = sum([gen^3 for gen in x_vars])
-f = sum([gen^2 for gen in x_vars])
+f = sum([gen^3 for gen in x_vars])
+# f = sum([gen^2 for gen in x_vars])
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 
 
 # g = sum([gen^2 for gen in x_vars])
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
-g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+# g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # g = sum([x_vars[i] * x_vars[(i+1)%(n+1)] for i in range(n+1)])+x_0^2
 # h = sum([x_vars[i] * x_vars[(i+2)%(n+1)] for i in range(n+1)])-x_1^2
 # print(f,g,h)
@@ -178,6 +179,24 @@ def run_macualay2_program(function_name, args):
     return a
 
 
+# first make ^ into **
+regex_remove_hyphens = re.compile(r"(\^)")
+
+# match characters in e.g. x_1**2*y_1
+# exclude only 1 word match to rule out word matrix
+# reallow decimal since 1 is valid
+regex_select_monomials = re.compile(r"([x|y|\d|_|^\*]{2,}|\d+)")
+
+# in: macaulay list of matrices
+# out: sage list of matrices
+def macaulay2_to_sage(s):    
+    s = re.sub(regex_remove_hyphens,"**",s)
+    return re.findall(regex_select_monomials,s)
+
+    
+
+# todo: migrate this to macaulay too
+
 # Macaulay2 code to check smoothness
 s = f'''
 k = ZZ/{p};
@@ -192,15 +211,10 @@ assert str(macaulay2(s)) == "true", f'Warning: F not smooth modulo {p}'
 # Macaulay2 code to run to compute Griffiths ring
 
 a = str(run_macualay2_program("computeGriffithsRing", [n,f"{poly_list}"]))
-t = a[2:-3]
-
-# todo: make this a method, probably with regex
-t = t.replace("{","").replace("}","").replace("^","**").replace(" ","").split("matrix")[1:]
-t = "".join(t).split(",")
+t = macaulay2_to_sage(a)
 B = []
 for _ in t:
-    if _ != "":
-        eval("B.append(R(" + _ +"))")
+    eval("B.append(R(" + _ +"))")
 print(B)
 
 
@@ -211,27 +225,20 @@ max_cohomology_pole_order = max([pole_order(_) for _ in B])
 # since we need U_{1,0}*P_n in P_{n+1}
 
 a = str(run_macualay2_program("computeP1", [n,f"{poly_list}"]))
-t = a[2:-3]
-
-t = t.replace("{","").replace("}","").replace("^","**").replace(" ","").split("matrix")[1:]
-t = "".join(t).split(",")
+t = macaulay2_to_sage(a)
 P1 = []
 for _ in t:
-    if _ != "":
-        eval("P1.append(R(" + _ +"))")
+    eval("P1.append(R(" + _ +"))")
 # print(P1)
 
 P1_pts = [monomial_to_vector(_) for _ in P1]
 
 a = str(run_macualay2_program("computePn", [n,f"{poly_list}"]))
-t = a[2:-3]
-
-t = t.replace("{","").replace("}","").replace("^","**").replace(" ","").split("matrix")[1:]
-t = "".join(t).split(",")
+t = macaulay2_to_sage(a)
 Pn = []
 for _ in t:
-    if _ != "":
-        eval("Pn.append(R(" + _ +"))")
+    eval("Pn.append(R(" + _ +"))")
+
 # print(Pn)
 size_pn = len(Pn)
 Pn_pts = [monomial_to_vector(mon) for mon in Pn]

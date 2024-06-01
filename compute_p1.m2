@@ -1,4 +1,8 @@
+
+-- this is defunct
+
 -- call with      M2 --script test.m2 8
+
 
 load "parse_input.m2"
 
