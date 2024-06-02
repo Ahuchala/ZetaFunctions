@@ -72,16 +72,16 @@ y_vars = gens[n+_sage_const_1 :]
 # J_p,m consists of p copies of y_i and sum_d_i copies of x_j
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
-# f = sum([gen^3 for gen in x_vars])
-f = sum([gen**_sage_const_2  for gen in x_vars])
+# f = sum(gen^3 for gen in x_vars)
+f = sum(gen**_sage_const_2  for gen in x_vars)
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 
 
-# g = sum([gen^2 for gen in x_vars])
+# g = sum(gen^2 for gen in x_vars)
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
 g = x_0**_sage_const_2  + _sage_const_2 *x_1**_sage_const_2  + _sage_const_3 *x_2**_sage_const_2  + _sage_const_4 *x_3**_sage_const_2 
-# g = sum([x_vars[i] * x_vars[(i+1)%(n+1)] for i in range(n+1)])+x_0^2
-# h = sum([x_vars[i] * x_vars[(i+2)%(n+1)] for i in range(n+1)])-x_1^2
+# g = sum(x_vars[i] * x_vars[(i+1)%(n+1)] for i in range(n+1))+x_0^2
+# h = sum(x_vars[i] * x_vars[(i+2)%(n+1)] for i in range(n+1))-x_1^2
 # print(f,g,h)
 # h = x_0*x_1 + x_1*x_2 + x_2*x_3
 
@@ -91,7 +91,7 @@ g = x_0**_sage_const_2  + _sage_const_2 *x_1**_sage_const_2  + _sage_const_3 *x_
 # f = x_0^4+x_0^3*x_1+x_0*x_1^3+x_0^2*x_1*x_2+x_0*x_1^2*x_2+x_1^3*x_2+x_0^2*x_2^2+x_0*x_2^3+x_1*x_2^3+x_0*x_1*x_2*x_3+x_2^3*x_3+x_0^2*x_3^2+x_0*x_1*x_3^2+x_1*x_2*x_3^2+x_0*x_3^3+x_1*x_3^3+x_2*x_3^3
 # f = x_0^2+2*x_0*x_1+2*x_1^2-x_0*x_2+x_1*x_2-2*x_0*x_3-x_1*x_3+2*x_2*x_3-2*x_3^2+x_0*x_4+2*x_2*x_4+2*x_3*x_4
 # g = -2*x_0^3-2*x_0^2*x_1+x_0*x_1^2-x_1^3+2*x_0^2*x_2-x_0*x_1*x_2-2*x_1^2*x_2-2*x_1*x_2^2+x_0^2*x_3+2*x_0*x_1*x_3+2*x_1^2*x_3+2*x_0*x_2*x_3-x_1*x_2*x_3+x_0*x_3^2+x_2*x_3^2-x_0^2*x_4+2*x_1^2*x_4-2*x_0*x_2*x_4+x_1*x_2*x_4-2*x_2^2*x_4-2*x_2*x_3*x_4+2*x_0*x_4^2-x_2*x_4^2-2*x_4^3
-# f = sum([gens[i]^2 for i in range(len(gens[:n+1]))])
+# f = sum(gens[i]^2 for i in range(len(gens[:n+1])))
 
 poly_list = [f]
 if num_poly == _sage_const_2 :
@@ -103,9 +103,9 @@ elif num_poly == _sage_const_3 :
 # todo: check if no rational points?
 
 degree_of_polynomials = [_.degree() for _ in poly_list]
-m = sum([f.degree() for f in poly_list]) - n - _sage_const_1 
+m = sum(f.degree() for f in poly_list) - n - _sage_const_1 
 
-F = sum([y_vars[i] * poly_list[i] for i in range(num_poly)])
+F = sum(y_vars[i] * poly_list[i] for i in range(num_poly))
 
 
 
@@ -158,7 +158,7 @@ def monomial_degree(monomial):
     e = monomial.exponents()[_sage_const_0 ]
 #   x_i contribute (0, e[i])
 #   y_i contribute (e[i+n+1],-poly_list[i].degree()] ))
-    return [sum(e[n+_sage_const_1 :]), sum(e[:n+_sage_const_1 ]) + sum([e[i+n+_sage_const_1 ]*-degree_of_polynomials[i] for i in range(num_poly)] )]
+    return [sum(e[n+_sage_const_1 :]), sum(e[:n+_sage_const_1 ]) + sum(e[i+n+_sage_const_1 ]*-degree_of_polynomials[i] for i in range(num_poly))]
 
 # for a monomial in vector form
 def pole_order_vector(vec):
@@ -192,6 +192,11 @@ def macaulay2_smooth_check_to_sage(s):
     return regex_contains_true.search(s)
 
 
+s = str(run_macualay2_program("assertSmooth", [n,poly_list,p]))
+assert macaulay2_smooth_check_to_sage(s), f'Warning: F not smooth modulo {p}'
+
+
+
 # first make ^ into **
 regex_remove_hyphens = re.compile(r"(\^)")
 
@@ -205,23 +210,6 @@ regex_select_monomials = re.compile(r"([x|y|\d|_|^\*]{2,}|\d+)")
 def macaulay2_matrices_to_sage(s):    
     s = re.sub(regex_remove_hyphens,"**",s)
     return re.findall(regex_select_monomials,s)
-
-    
-
-# todo: migrate this to macaulay too
-
-# Macaulay2 code to check smoothness
-# s = f'''
-# k = ZZ/{p};
-# R = k[x_0..x_{n}];
-# I = ideal {str(tuple(poly_list))[:-2] if len(poly_list) == 1 else str(tuple(poly_list))[:-1] });
-# J = I + minors({num_poly}, jacobian I);
-# saturate J == R
-# '''
-
-s = str(run_macualay2_program("assertSmooth", [n,poly_list,p]))
-print(s)
-assert macaulay2_smooth_check_to_sage(s), f'Warning: F not smooth modulo {p}'
 
 
 # Macaulay2 code to run to compute Griffiths ring
@@ -372,7 +360,7 @@ def to_pn_basis(g):
     return return_vec
 
 def from_pn_basis(g_vec):
-    return sum([g_vec[i] * Pn[i] for i in range(size_pn)])
+    return sum(g_vec[i] * Pn[i] for i in range(size_pn))
 
 lift_dict = {}
 
@@ -404,7 +392,7 @@ Ruv_u_dict = {}
 
 def Ruv_const_helper(v,g):
     gi = lift_poly(vector_to_monomial(v)*g)
-    h = sum([gi[i] + gens[i] * (gi[i]).derivative(gens[i]) for i in range(n+num_poly+_sage_const_1 )])
+    h = sum(gi[i] + gens[i] * (gi[i]).derivative(gens[i]) for i in range(n+num_poly+_sage_const_1 ))
     # print(h)
     return to_pn_basis(h)
 
@@ -476,8 +464,8 @@ def reduce_griffiths_dwork(u,g):
         C = Ruv_const_dict[tuple(v)]
         D = Ruv_u_dict[tuple(v)]
 
-        E = C + sum([u[i]* D[i] for i in range(n+num_poly+_sage_const_1 )])
-        F = sum([v[i] * D[i] for i in range(n+num_poly+_sage_const_1 )])
+        E = C + sum(u[i]* D[i] for i in range(n+num_poly+_sage_const_1 ))
+        F = sum(v[i] * D[i] for i in range(n+num_poly+_sage_const_1 ))
 
         g_vec = mat_mul(E,F,k,g_vec)
  
@@ -506,7 +494,7 @@ def compute_new_reduce_to_B_key(key):
                     q = J(monomial).lift()
                     r = monomial - q
                     l = r.lift(I)
-                    temp = sum([l[i].derivative(gens[i]) for i in range(n+num_poly+_sage_const_1 )])
+                    temp = sum(l[i].derivative(gens[i]) for i in range(n+num_poly+_sage_const_1 ))
                     reduction_dict[monomial] = temp + q
                 # this could be implemented better
                 # but ultimately should be done in M2 anyways
@@ -561,7 +549,7 @@ poly = (frob_matrix.characteristic_polynomial())
 print(poly)
 
 # todo: mod these based on weil conjectures
-poly = sum([(poly.monomial_coefficient(mono) % p**(prec) )* mono if (poly.monomial_coefficient(mono)% p**prec) < (p**prec)//_sage_const_2  else (-p**(prec)+poly.monomial_coefficient(mono)% p**prec)*mono for mono in poly.monomials()])
+poly = sum((poly.monomial_coefficient(mono) % p**(prec) )* mono if (poly.monomial_coefficient(mono)% p**prec) < (p**prec)//_sage_const_2  else (-p**(prec)+poly.monomial_coefficient(mono)% p**prec)*mono for mono in poly.monomials())
 print(poly)
 print(p)
 print(size_pn)
