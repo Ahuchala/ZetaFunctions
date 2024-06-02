@@ -29,21 +29,21 @@ USE_RATIONAL_ARITHMETIC = False
 
 # number of hypersurfaces in complete intersection
 
-num_poly = 1
-# num_poly = 2
+# num_poly = 1
+num_poly = 2
 # num_poly = 3
 
 
-# p = Primes().next(2^16)
-p = 17
+# p = Primes().next(2^13)
+p = 7
 prec = 2# todo: work this out
 arithmetic_precision_increase = 2 # todo: work this out too
 prec_arithmetic = p^(arithmetic_precision_increase+prec)
 
 load("mat_mul.sage")
 
-# R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
-R.<x_0,x_1,x_2,y_1> = QQ[]
+R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+# R.<x_0,x_1,x_2,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,x_5,y_1> = QQ[]
@@ -66,14 +66,14 @@ y_vars = gens[n+1:]
 # J_p,m consists of p copies of y_i and sum_d_i copies of x_j
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
-f = sum([gen^3 for gen in x_vars])
-# f = sum([gen^2 for gen in x_vars])
+# f = sum([gen^3 for gen in x_vars])
+f = sum([gen^2 for gen in x_vars])
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 
 
 # g = sum([gen^2 for gen in x_vars])
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
-# g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # g = sum([x_vars[i] * x_vars[(i+1)%(n+1)] for i in range(n+1)])+x_0^2
 # h = sum([x_vars[i] * x_vars[(i+2)%(n+1)] for i in range(n+1)])-x_1^2
 # print(f,g,h)
@@ -178,6 +178,18 @@ def run_macualay2_program(function_name, args):
     a = subprocess.run(ls,capture_output=True).stdout
     return a
 
+regex_contains_true = re.compile(r"[true]+")
+
+# does it contain the string true
+# since s == "b'true\n'" seems not to work
+def macaulay2_smooth_check_to_sage(s):    
+    return regex_contains_true.search(s)
+
+
+s = str(run_macualay2_program("assertSmooth", [n,poly_list,p]))
+assert macaulay2_smooth_check_to_sage(s), f'Warning: F not smooth modulo {p}'
+
+
 
 # first make ^ into **
 regex_remove_hyphens = re.compile(r"(\^)")
@@ -189,29 +201,15 @@ regex_select_monomials = re.compile(r"([x|y|\d|_|^\*]{2,}|\d+)")
 
 # in: macaulay list of matrices
 # out: sage list of matrices
-def macaulay2_to_sage(s):    
+def macaulay2_matrices_to_sage(s):    
     s = re.sub(regex_remove_hyphens,"**",s)
     return re.findall(regex_select_monomials,s)
-
-    
-
-# todo: migrate this to macaulay too
-
-# Macaulay2 code to check smoothness
-s = f'''
-k = ZZ/{p};
-R = k[x_0..x_{n}];
-I = ideal {str(tuple(poly_list))[:-2] if len(poly_list) == 1 else str(tuple(poly_list))[:-1] });
-J = I + minors({num_poly}, jacobian I);
-saturate J == R
-'''
-assert str(macaulay2(s)) == "true", f'Warning: F not smooth modulo {p}'
 
 
 # Macaulay2 code to run to compute Griffiths ring
 
-a = str(run_macualay2_program("computeGriffithsRing", [n,f"{poly_list}"]))
-t = macaulay2_to_sage(a)
+a = str(run_macualay2_program("computeGriffithsRing", [n,poly_list]))
+t = macaulay2_matrices_to_sage(a)
 B = []
 for _ in t:
     eval("B.append(R(" + _ +"))")
@@ -224,8 +222,8 @@ max_cohomology_pole_order = max([pole_order(_) for _ in B])
 # Note that this is actually U_{1,0} rather than U_{1,m}
 # since we need U_{1,0}*P_n in P_{n+1}
 
-a = str(run_macualay2_program("computeP1", [n,f"{poly_list}"]))
-t = macaulay2_to_sage(a)
+a = str(run_macualay2_program("computeP1", [n,poly_list]))
+t = macaulay2_matrices_to_sage(a)
 P1 = []
 for _ in t:
     eval("P1.append(R(" + _ +"))")
@@ -233,8 +231,8 @@ for _ in t:
 
 P1_pts = [monomial_to_vector(_) for _ in P1]
 
-a = str(run_macualay2_program("computePn", [n,f"{poly_list}"]))
-t = macaulay2_to_sage(a)
+a = str(run_macualay2_program("computePn", [n,poly_list]))
+t = macaulay2_matrices_to_sage(a)
 Pn = []
 for _ in t:
     eval("Pn.append(R(" + _ +"))")

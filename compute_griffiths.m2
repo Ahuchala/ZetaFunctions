@@ -5,6 +5,20 @@
 
 load "parse_input.m2"
 
+assertSmooth = (n,polynomials,p) -> (
+    k = ZZ/p;
+    R = k[x_0..x_n]; -- useful for parsing input, not strictly necessary
+
+    polyList = value(polynomials);
+    numPoly = length polyList;
+
+    polyList = value(polynomials);
+
+    I = ideal toList polyList;
+    J = I + minors(numPoly, jacobian I);
+    return saturate J == R;
+);
+
 computeGriffithsRing = (n,polynomials) -> (
     k = QQ;
     S = k[x_0..x_n]; -- useful for parsing input, not strictly necessary
@@ -60,5 +74,7 @@ computePn = (n,polynomials) -> (
 
     return toString basis({n,-n}, R)
 );
+
+
 
 print parseInput();
