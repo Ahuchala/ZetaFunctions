@@ -1,4 +1,9 @@
 # maybe we require f to be nondegenerate too?
+# why does this have issues? p =13, f =  -5*x_0^3-x_0*x_1^2+4*x_0^2*x_2+2*x_0*x_1*x_2-3*x_1^2*x_2-2*x_0*x_2^2-6*x_1*x_2^2+5*x_2^3
+# R/xI has has hilbert function {1, 3, 6, 7, 6, 3, 2, 2, 2, 2, 2}
+# what gives?
+
+# maybe check homological dimension of R / xI and compute accordingly
 
 import subprocess
 import re
@@ -37,8 +42,8 @@ num_poly = 1
 
 
 # p = Primes().next(2^13)
-p = 31
-prec = 2# todo: work this out
+p = 389
+prec = 1# todo: work this out
 arithmetic_precision_increase = 2 # todo: work this out too
 prec_arithmetic = p^(arithmetic_precision_increase+prec)
 
@@ -108,7 +113,7 @@ F = sum(y_vars[i] * poly_list[i] for i in range(num_poly))
 
 
 
-
+assert all(poly.is_homogeneous() for poly in poly_list), "Warning: at least one polynomial is not homogeneous"
 
 assert p in Primes(), f'Warning: {p} is not prime'
 
@@ -376,10 +381,10 @@ def lift_poly(g):
             term = [0 for _ in range(n+num_poly+1)]
             for i in range(n+num_poly+1):
                 term_i = r[i].dict()
-                if not USE_RATIONAL_ARITHMETIC:
-                    for _ in term_i.keys():
+                # if not USE_RATIONAL_ARITHMETIC:
+                    # for _ in term_i.keys():
                     # note: this will cause issues for some primes. why?
-                        term_i[_] = (term_i[_]) % p^(prec+arithmetic_precision_increase) # this converts to ZZ/p^prec
+                        # term_i[_] = (term_i[_]) % p^(prec+arithmetic_precision_increase) # this converts to ZZ/p^prec
                 term[i] = R(term_i)
             lift_dict[monomial] = term
         monomial_lift = lift_dict[monomial]
@@ -456,7 +461,7 @@ def reduce_griffiths_dwork(u,g):
     # todo: work out precise bounds!
 
     # todo: speed up!
-    while(pole_order_vector(u))>max_cohomology_pole_order+1:
+    while(pole_order_vector(u))>max_cohomology_pole_order: #+1: #add if poly not in ideal for bad primes
     # while (u not in P1_pts):
         print(u)
 

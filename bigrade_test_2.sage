@@ -348,26 +348,7 @@ def reduce_griffiths_dwork(u,g):
     
     return u,g
 
-# writes u as u' + kv with k maximal and v in P1
-def compute_vk(u):
-    best_k = -1
-    best_v = -1
-    for v in P1_pts:
-        k = max(u) # garbage value
-        for i in range(n+num_poly+1):
-            if v[i]>0:
-                k = min(k, u[i]//v[i])
-        if k > best_k:
-            best_k = k
-            best_v = v
-    v = best_v
-    k = best_k
-    # I think I could just count the y_i's
-    if pole_order(vector_to_monomial([u[i] - k*v[i] for i in range(n+num_poly+1)])) == 0: #m?
-        # print("error: overcounted")
-        k -= 1
-    k = 1 # for now
-    return v,k
+
 
 v_matrix_dict = {}
 
