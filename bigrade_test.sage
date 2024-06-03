@@ -1,3 +1,5 @@
+# maybe we require f to be nondegenerate too?
+
 import subprocess
 import re
 
@@ -29,21 +31,21 @@ USE_RATIONAL_ARITHMETIC = False
 
 # number of hypersurfaces in complete intersection
 
-# num_poly = 1
-num_poly = 2
+num_poly = 1
+# num_poly = 2
 # num_poly = 3
 
 
 # p = Primes().next(2^13)
-p = 7
+p = 31
 prec = 2# todo: work this out
 arithmetic_precision_increase = 2 # todo: work this out too
 prec_arithmetic = p^(arithmetic_precision_increase+prec)
 
 load("mat_mul.sage")
 
-R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
-# R.<x_0,x_1,x_2,y_1> = QQ[]
+# R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+R.<x_0,x_1,x_2,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,x_5,y_1> = QQ[]
@@ -67,13 +69,15 @@ y_vars = gens[n+1:]
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
 # f = sum(gen^3 for gen in x_vars)
-f = sum(gen^2 for gen in x_vars)
+# f = sum(gen^2 for gen in x_vars)
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 
+# f = x_1^2*x_2 - x_0^3 - 8*x_0*x_2^2 - 17*x_2^3
 
+f =  -5*x_0^3-x_0*x_1^2+4*x_0^2*x_2+2*x_0*x_1*x_2-3*x_1^2*x_2-2*x_0*x_2^2-6*x_1*x_2^2+5*x_2^3
 # g = sum(gen^2 for gen in x_vars)
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
-g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+# g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # g = sum(x_vars[i] * x_vars[(i+1)%(n+1)] for i in range(n+1))+x_0^2
 # h = sum(x_vars[i] * x_vars[(i+2)%(n+1)] for i in range(n+1))-x_1^2
 # print(f,g,h)
@@ -117,10 +121,10 @@ def monomial_to_vector(m):
     return list(m.exponents()[0])
 
 def vector_to_monomial(v):
-    return prod([gens[i]^v[i] for i in range(n+num_poly+1)])
+    return prod(gens[i]^v[i] for i in range(n+num_poly+1))
 
 def vector_addition(u,v):
-    return tuple([u[i] + v[i] for i in range(n+num_poly+1)])
+    return tuple(u[i] + v[i] for i in range(n+num_poly+1))
 
 # given constant and a dict of a polynomial g, returns (c * g).dict()
 def multiplication_by_scalar(c,g_dict):
@@ -143,7 +147,7 @@ def polynomial_multiplication(g_dict,h_dict):
 def divide_by_x0xn(g_dict):
     return_dict = {}
     for g_key in g_dict:
-        return_dict[tuple([g_key[i]-1 for i in range(len(g_key))])] = g_dict[g_key]
+        return_dict[tuple(g_key[i]-1 for i in range(len(g_key)))] = g_dict[g_key]
     return return_dict
 
 
@@ -157,6 +161,12 @@ def monomial_degree(monomial):
 # for a monomial in vector form
 def pole_order_vector(vec):
     return sum(vec[n+1:])
+
+# for a monomial in iterator form
+# warning: this must only contain data of y coordinates
+# def pole_order_iterator(_iter):
+#     # assert len(list(_iter)) == num_poly, "Warning: monomial entered was not a proper iterator of y variables"
+#     return sum(_iter)
 
 # redundant method
 def pole_order_monomial(monomial):
@@ -208,7 +218,7 @@ def macaulay2_matrices_to_sage(s):
 
 # Macaulay2 code to run to compute Griffiths ring
 
-a = str(run_macualay2_program("computeGriffithsRing", [n,poly_list]))
+a = str(run_macualay2_program("computeGriffithsRing", [n,poly_list,p]))
 t = macaulay2_matrices_to_sage(a)
 B = []
 for _ in t:
@@ -222,7 +232,7 @@ max_cohomology_pole_order = max([pole_order(_) for _ in B])
 # Note that this is actually U_{1,0} rather than U_{1,m}
 # since we need U_{1,0}*P_n in P_{n+1}
 
-a = str(run_macualay2_program("computeP1", [n,poly_list]))
+a = str(run_macualay2_program("computeP1", [n,poly_list,p]))
 t = macaulay2_matrices_to_sage(a)
 P1 = []
 for _ in t:
@@ -231,7 +241,7 @@ for _ in t:
 
 P1_pts = [monomial_to_vector(_) for _ in P1]
 
-a = str(run_macualay2_program("computePn", [n,poly_list]))
+a = str(run_macualay2_program("computePn", [n,poly_list,p]))
 t = macaulay2_matrices_to_sage(a)
 Pn = []
 for _ in t:
@@ -258,7 +268,7 @@ def sigma(g,return_as_dict = False):
 def sigma_dict(g_dict,return_as_dict = False):
     g_dict_keys = set(g_dict.keys())
     for key in g_dict_keys:
-        g_dict[tuple([k*p for k in key])] = g_dict.pop(key) # if Fq is eventually implemented this will change
+        g_dict[tuple(k*p for k in key)] = g_dict.pop(key) # if Fq is eventually implemented this will change
     if return_as_dict:
         return g_dict
     return R(g_dict)
@@ -285,11 +295,10 @@ def frobenius(g,prec=2,return_as_dict = True):
 
 # returns as a dict
 def frobenius_on_cohom(i,prec = 2):
-    g = R(B[i])*prod(gens)
-    g = frobenius(g,prec)
+    Bi_times_prod_gens = R(B[i])*prod(gens)
+    Bi_times_prod_gens = frobenius(Bi_times_prod_gens,prec)
     # return R(g *p^(n -1) / prod(gens))
-    return multiplication_by_scalar(p^(n -1),divide_by_x0xn(g))
-
+    return multiplication_by_scalar(p^(n -1),divide_by_x0xn(Bi_times_prod_gens))
 
 reduction_dict = {}
 
@@ -305,7 +314,6 @@ def to_ug(frobenius_of_Bi):
     # (x_0^5*x_1*y_1^2).dict() looks like {(5, 1, 0, 2): 1}
     # hdict = frobenius_of_Bi.dict()
     hdict = frobenius_of_Bi
-    
 
     while hdict: # is_nonempty
         hdict_keys = hdict.keys()
@@ -315,13 +323,12 @@ def to_ug(frobenius_of_Bi):
         etuple = hdict_keys_ls[0]
 
         vector = list(etuple)
-        c = hdict[etuple]
         # todo: save on divisibility?
 
         # python uses function scope
         # g = Pn_pts[0]
         for g_vec in Pn_pts:
-            if all([vector[i] >= g_vec[i] for i in range(n+num_poly+1)]):
+            if all(vector[i] >= g_vec[i] for i in range(n+num_poly+1)):
                 g = g_vec
                 break
         u = [vector[i] - g[i] for i in range(n+num_poly+1)]
@@ -338,7 +345,7 @@ def to_ug(frobenius_of_Bi):
         # g *= c
         # for etuple_2 in hdict_keys_ls:
         #     temp_vec = [etuple_2[i]-u[i] for i in range(n+num_poly+1)]
-        #     if all([temp_vec[i] >= 0 for i in range(n+num_poly+1)]):
+        #     if all(temp_vec[i] >= 0 for i in range(n+num_poly+1)):
         #         print('popped')
         #         g += hdict[etuple_2] * vector_to_monomial(temp_vec)
         #         hdict.pop(etuple_2)
@@ -369,9 +376,9 @@ def lift_poly(g):
             term = [0 for _ in range(n+num_poly+1)]
             for i in range(n+num_poly+1):
                 term_i = r[i].dict()
-                for _ in term_i.keys():
+                if not USE_RATIONAL_ARITHMETIC:
+                    for _ in term_i.keys():
                     # note: this will cause issues for some primes. why?
-                    if not USE_RATIONAL_ARITHMETIC:
                         term_i[_] = (term_i[_]) % p^(prec+arithmetic_precision_increase) # this converts to ZZ/p^prec
                 term[i] = R(term_i)
             lift_dict[monomial] = term
@@ -418,7 +425,7 @@ def compute_Ruv(v):
             Ruv_u_mat[j][i] = temp[j]
         Ruv_const_mat[i] = Ruv_const_helper(v,g)
     Ruv_const_dict[tuple(v)] = matrix(Ruv_const_mat)
-    Ruv_u_dict[tuple(v)] = tuple([matrix(Ruv_u_mat[i]) for i in range(n+num_poly+1)])
+    Ruv_u_dict[tuple(v)] = tuple(matrix(Ruv_u_mat[i]) for i in range(n+num_poly+1))
     return
 
 # writes u as u' + kv with k maximal and v in P1
@@ -437,6 +444,8 @@ def compute_vk(u):
     k = best_k
     # I think I could just count the y_i's
     if pole_order_vector([u[i] - k*v[i] for i in range(n+num_poly+1)]) == 0: #m?
+
+    # if pole_order_iterator(u[i] - k*v[i] for i in range(n+1,n+num_poly+1)) == 0: #m?
         # print("error: overcounted")
         k -= 1
     return v,k
@@ -447,7 +456,7 @@ def reduce_griffiths_dwork(u,g):
     # todo: work out precise bounds!
 
     # todo: speed up!
-    while(pole_order_vector(u))>max_cohomology_pole_order:
+    while(pole_order_vector(u))>max_cohomology_pole_order+1:
     # while (u not in P1_pts):
         print(u)
 
@@ -514,14 +523,16 @@ for i in range(len(B)):
     h = frobenius_on_cohom(i,prec)
     htemp = 0
     for u,g in to_ug(h):
-        denom = factorial(pole_order_vector(u)+max_cohomology_pole_order)
+        denom =  factorial(pole_order_vector(u)+pole_order(g))
+
+        # denom =  factorial(pole_order_vector(u)+max_cohomology_pole_order+1)
 
         print(u,g)
         # this is the slow step
         u,g = reduce_griffiths_dwork(u,g)
 
 
-        htemp += vector_to_monomial(u) * g // denom
+        htemp += vector_to_monomial(u) * g / denom
 
     # takes h from coker (x dF/dxi) to coker (dF/dxi)
     summer = reduce_to_B(htemp.dict())
@@ -532,7 +543,7 @@ for i in range(len(B)):
         
     print(B[i],summer)
 
-if all([all([a.ord(p)>=0 for a in b]) for b in frob_matrix]):
+if all(all(a.ord(p)>=0 for a in b) for b in frob_matrix):
     frob_matrix = [[a % p^ prec for a in b] for b in frob_matrix]
     print(frob_matrix)
 else:

@@ -19,8 +19,9 @@ assertSmooth = (n,polynomials,p) -> (
     return saturate J == R;
 );
 
-computeGriffithsRing = (n,polynomials) -> (
+computeGriffithsRing = (n,polynomials,p) -> (
     k = QQ;
+    -- k = ZZ/p;
     S = k[x_0..x_n]; -- useful for parsing input, not strictly necessary
 
     polyList = value(polynomials);
@@ -41,8 +42,9 @@ computeGriffithsRing = (n,polynomials) -> (
     return for i from 0 to (n-numPoly) list toString basis({i,m}, J)
 );
 
-computeP1 = (n,polynomials) -> (
+computeP1 = (n,polynomials,p) -> (
     k = QQ;
+    -- k = ZZ/p;
     S = k[x_0..x_n]; -- useful for parsing input, not strictly necessary
 
     polyList = value(polynomials);
@@ -57,8 +59,9 @@ computeP1 = (n,polynomials) -> (
     return toString basis({1,0}, R)
 );
 
-computePn = (n,polynomials) -> (
+computePn = (n,polynomials,p) -> (
     k = QQ;
+    -- k = ZZ/p;
     S = k[x_0..x_n]; -- useful for parsing input, not strictly necessary
 
     polyList = value(polynomials);
