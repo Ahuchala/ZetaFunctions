@@ -36,21 +36,22 @@ USE_RATIONAL_ARITHMETIC = False
 
 # number of hypersurfaces in complete intersection
 
-num_poly = 1
-# num_poly = 2
+# num_poly = 1
+num_poly = 2
 # num_poly = 3
 
 
 # p = Primes().next(2^13)
-p = 389
+p = 17
 prec = 1# todo: work this out
 arithmetic_precision_increase = 2 # todo: work this out too
 prec_arithmetic = p^(arithmetic_precision_increase+prec)
 
 load("mat_mul.sage")
+load("hirzebruch.sage")
 
-# R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
-R.<x_0,x_1,x_2,y_1> = QQ[]
+R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+# R.<x_0,x_1,x_2,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,x_5,y_1> = QQ[]
@@ -79,16 +80,16 @@ y_vars = gens[n+1:]
 
 # f = x_1^2*x_2 - x_0^3 - 8*x_0*x_2^2 - 17*x_2^3
 
-f =  -5*x_0^3-x_0*x_1^2+4*x_0^2*x_2+2*x_0*x_1*x_2-3*x_1^2*x_2-2*x_0*x_2^2-6*x_1*x_2^2+5*x_2^3
+# f =  -5*x_0^3-x_0*x_1^2+4*x_0^2*x_2+2*x_0*x_1*x_2-3*x_1^2*x_2-2*x_0*x_2^2-6*x_1*x_2^2+5*x_2^3
 # g = sum(gen^2 for gen in x_vars)
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
-# g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # g = sum(x_vars[i] * x_vars[(i+1)%(n+1)] for i in range(n+1))+x_0^2
 # h = sum(x_vars[i] * x_vars[(i+2)%(n+1)] for i in range(n+1))-x_1^2
 # print(f,g,h)
 # h = x_0*x_1 + x_1*x_2 + x_2*x_3
 
-# f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2
+f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
 
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 # f = x_0^4+x_0^3*x_1+x_0*x_1^3+x_0^2*x_1*x_2+x_0*x_1^2*x_2+x_1^3*x_2+x_0^2*x_2^2+x_0*x_2^3+x_1*x_2^3+x_0*x_1*x_2*x_3+x_2^3*x_3+x_0^2*x_3^2+x_0*x_1*x_3^2+x_1*x_2*x_3^2+x_0*x_3^3+x_1*x_3^3+x_2*x_3^3
@@ -114,7 +115,6 @@ F = sum(y_vars[i] * poly_list[i] for i in range(num_poly))
 
 
 assert all(poly.is_homogeneous() for poly in poly_list), "Warning: at least one polynomial is not homogeneous"
-
 assert p in Primes(), f'Warning: {p} is not prime'
 
 
@@ -229,9 +229,13 @@ B = []
 for _ in t:
     eval("B.append(R(" + _ +"))")
 print(B)
+# assert False
 
+hodge_numbers = h_pq(degree_of_polynomials,n)
+hodge_slopes = h_pq_to_hodge_polygon(hodge_numbers)
+# assert [pole_order(_) for _ in B] == hodge_slopes, f"Warning: issue with Hodge numbers {[pole_order(_) for _ in B]}, {hodge_slopes}"
 
-max_cohomology_pole_order = max([pole_order(_) for _ in B])
+max_cohomology_pole_order = max(hodge_slopes)
 
 # Macaulay2 code to run to compute P1
 # Note that this is actually U_{1,0} rather than U_{1,m}
@@ -461,7 +465,7 @@ def reduce_griffiths_dwork(u,g):
     # todo: work out precise bounds!
 
     # todo: speed up!
-    while(pole_order_vector(u))>max_cohomology_pole_order: #+1: #add if poly not in ideal for bad primes
+    while(pole_order_vector(u))>max_cohomology_pole_order: #add if poly not in ideal for bad primes
     # while (u not in P1_pts):
         print(u)
 

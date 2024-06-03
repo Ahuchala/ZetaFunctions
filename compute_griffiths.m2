@@ -20,14 +20,14 @@ assertSmooth = (n,polynomials,p) -> (
 );
 
 computeGriffithsRing = (n,polynomials,p) -> (
-    k = QQ;
-    -- k = ZZ/p;
-    S = k[x_0..x_n]; -- useful for parsing input, not strictly necessary
+    -- k = QQ;
+    k = ZZ/p;
+    R = k[x_0..x_n]; -- useful for parsing input, not strictly necessary
 
     polyList = value(polynomials);
     numPoly = length polyList;
-    degs = for b in polyList list (degree b)#0;
-    m = n + 1 - sum(degs);
+    degs = for b in polyList list first degree b;
+    m = sum(degs)- n - 1;
 
 
     degreeInput = for i from 0 to n list {0,1};
@@ -40,6 +40,8 @@ computeGriffithsRing = (n,polynomials,p) -> (
     F = sum ( for i from 1 to numPoly list y_i * polyList_(i-1));
     J = R/ideal jacobian F;
     return for i from 0 to (n-numPoly) list toString basis({i,m}, J)
+
+    -- return for i from 0 to (n-numPoly) list toString basis({i,m}, J)
 );
 
 computeP1 = (n,polynomials,p) -> (
@@ -50,8 +52,8 @@ computeP1 = (n,polynomials,p) -> (
     polyList = value(polynomials);
     numPoly = length polyList;
     degs = for b in polyList list (degree b)#0;
-    m = n + 1 - sum(degs);
-
+    m = sum(degs)-n - 1;
+    
     degreeInput = for i from 0 to n list {0,1};
     degreeInput = degreeInput | for poly in polyList list {1,- first degree poly};
 
@@ -67,7 +69,7 @@ computePn = (n,polynomials,p) -> (
     polyList = value(polynomials);
     numPoly = length polyList;
     degs = for b in polyList list (degree b)#0;
-    m = n + 1 - sum(degs);
+    m = sum(degs)-n - 1;
 
 
     degreeInput = for i from 0 to n list {0,1};
