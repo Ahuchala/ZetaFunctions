@@ -43,7 +43,7 @@ num_poly = 1
 
 # p = Primes().next(2^13)
 p = 11
-prec = 3# todo: work this out
+prec = 2# todo: work this out
 arithmetic_precision_increase = 2 # todo: work this out too
 prec_arithmetic = p^(arithmetic_precision_increase+prec)
 
@@ -51,8 +51,8 @@ load("mat_mul.sage")
 load("hirzebruch.sage")
 
 # R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
-R.<x_0,x_1,x_2,y_1> = QQ[]
-# R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
+# R.<x_0,x_1,x_2,y_1> = QQ[]
+R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,x_5,y_1> = QQ[]
 

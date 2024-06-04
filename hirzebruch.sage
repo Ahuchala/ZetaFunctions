@@ -6,7 +6,7 @@ from sage.rings.polynomial.polydict import ETuple
 def h_pq(d, n):
 	n -= len(d)
 	R.<x,y> = PowerSeriesRing(ZZ, default_prec=n+2)
-	H = 1/((1+x)*(1+y)) * (prod([((1+x)^di - (1+y)^di) / (x*(1+y)^di - y*(1+x)^di) for di in d]) - 1) + 1/(1-x*y)
+	H = 1/((1+x)*(1+y)) * (prod([((1+x)^di - (1+y)^di) / (x*(1+y)^di - y*(1+x)^di) for di in d]) - 1)
 	return [H.coefficients()[x^i * y^(n-i)] if x^i * y^(n-i) in H.coefficients() else 0 for i in range(n + 1)]
 
 # def h_pq(d,n):
