@@ -36,22 +36,22 @@ USE_RATIONAL_ARITHMETIC = False
 
 # number of hypersurfaces in complete intersection
 
-# num_poly = 1
-num_poly = 2
+num_poly = 1
+# num_poly = 2
 # num_poly = 3
 
 
 # p = Primes().next(2^13)
 p = 17
-prec = 1# todo: work this out
+prec = 3# todo: work this out
 arithmetic_precision_increase = 2 # todo: work this out too
 prec_arithmetic = p^(arithmetic_precision_increase+prec)
 
 load("mat_mul.sage")
 load("hirzebruch.sage")
 
-R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
-# R.<x_0,x_1,x_2,y_1> = QQ[]
+# R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+R.<x_0,x_1,x_2,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,x_5,y_1> = QQ[]
@@ -74,7 +74,7 @@ y_vars = gens[n+1:]
 # J_p,m consists of p copies of y_i and sum_d_i copies of x_j
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
-# f = sum(gen^3 for gen in x_vars)
+f = sum(gen^4 for gen in x_vars)
 # f = sum(gen^2 for gen in x_vars)
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 
@@ -83,13 +83,13 @@ y_vars = gens[n+1:]
 # f =  -5*x_0^3-x_0*x_1^2+4*x_0^2*x_2+2*x_0*x_1*x_2-3*x_1^2*x_2-2*x_0*x_2^2-6*x_1*x_2^2+5*x_2^3
 # g = sum(gen^2 for gen in x_vars)
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
-g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+# g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # g = sum(x_vars[i] * x_vars[(i+1)%(n+1)] for i in range(n+1))+x_0^2
 # h = sum(x_vars[i] * x_vars[(i+2)%(n+1)] for i in range(n+1))-x_1^2
 # print(f,g,h)
 # h = x_0*x_1 + x_1*x_2 + x_2*x_3
 
-f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
+# f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
 
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 # f = x_0^4+x_0^3*x_1+x_0*x_1^3+x_0^2*x_1*x_2+x_0*x_1^2*x_2+x_1^3*x_2+x_0^2*x_2^2+x_0*x_2^3+x_1*x_2^3+x_0*x_1*x_2*x_3+x_2^3*x_3+x_0^2*x_3^2+x_0*x_1*x_3^2+x_1*x_2*x_3^2+x_0*x_3^3+x_1*x_3^3+x_2*x_3^3
@@ -233,7 +233,7 @@ print(B)
 
 hodge_numbers = h_pq(degree_of_polynomials,n)
 hodge_slopes = h_pq_to_hodge_polygon(hodge_numbers)
-# assert [pole_order(_) for _ in B] == hodge_slopes, f"Warning: issue with Hodge numbers {[pole_order(_) for _ in B]}, {hodge_slopes}"
+assert [pole_order(_) for _ in B] == hodge_slopes, f"Warning: issue with Hodge numbers {[pole_order(_) for _ in B]}, {hodge_slopes}"
 
 max_cohomology_pole_order = max(hodge_slopes)
 
