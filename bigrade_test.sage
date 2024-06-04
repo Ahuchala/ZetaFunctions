@@ -42,7 +42,7 @@ num_poly = 1
 
 
 # p = Primes().next(2^13)
-p = 17
+p = 11
 prec = 3# todo: work this out
 arithmetic_precision_increase = 2 # todo: work this out too
 prec_arithmetic = p^(arithmetic_precision_increase+prec)
@@ -65,6 +65,7 @@ R.<x_0,x_1,x_2,y_1> = QQ[]
 
 
 gens = R.gens()
+prod_gens = prod(gens)
 n = len(gens) - num_poly-1
 # assert len(gens) == num_poly + n+1
 
@@ -299,7 +300,7 @@ def frobenius(g,prec=2,return_as_dict = True):
 
 # returns as a dict
 def frobenius_on_cohom(i,prec = 2):
-    Bi_times_prod_gens = R(B[i])*prod(gens)
+    Bi_times_prod_gens = R(B[i])*prod_gens
     Bi_times_prod_gens = frobenius(Bi_times_prod_gens,prec)
     # return R(g *p^(n -1) / prod(gens))
     return multiplication_by_scalar(p^(n -1),divide_by_x0xn(Bi_times_prod_gens))
@@ -554,7 +555,7 @@ else:
     print("Warning: non-invertible elements encountered")
 frob_matrix = matrix(frob_matrix)
 
-poly = (frob_matrix.characteristic_polynomial())
+poly = frob_matrix.characteristic_polynomial()
 print(poly)
 
 # todo: mod these based on weil conjectures
