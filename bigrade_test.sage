@@ -42,17 +42,19 @@ num_poly = 1
 
 
 # p = Primes().next(2^13)
-p = 11
+p = 389
 prec = 2# todo: work this out
 arithmetic_precision_increase = 2 # todo: work this out too
 prec_arithmetic = p^(arithmetic_precision_increase+prec)
+arithmetic_ring = Integers(prec_arithmetic)
 
+# load("mat_mul.spyx")
 load("mat_mul.sage")
 load("hirzebruch.sage")
 
 # R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
-# R.<x_0,x_1,x_2,y_1> = QQ[]
-R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
+R.<x_0,x_1,x_2,y_1> = QQ[]
+# R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,x_5,y_1> = QQ[]
 
@@ -75,7 +77,10 @@ y_vars = gens[n+1:]
 # J_p,m consists of p copies of y_i and sum_d_i copies of x_j
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
-f = sum(gen^4 for gen in x_vars)
+# f = x_1^2*x_2-x_0^3 - x_0*x_2^2 #degenerate
+# f = x_0*x_1 + x_2*x_3 + x_4^2
+# g = 2*x_0^3+2*x_0^2*x_1+2*x_0^2*x_2+x_0*x_1*x_2-2*x_1^2*x_2-x_1*x_2^2-x_0*x_1*x_3+x_0*x_2*x_3-x_2^2*x_3+2*x_0*x_3^2+x_2*x_3^2-2*x_0^2*x_4-2*x_0*x_1*x_4+x_0*x_2*x_4-x_2^2*x_4+2*x_0*x_3*x_4-x_1*x_3*x_4+2*x_2*x_3*x_4+2*x_3^2*x_4+2*x_0*x_4^2-2*x_1*x_4^2+2*x_3*x_4^2-2*x_4^3
+f = sum(gen^3 for gen in x_vars)
 # f = sum(gen^2 for gen in x_vars)
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 
@@ -366,7 +371,7 @@ def to_pn_basis(g):
     return return_vec
 
 def from_pn_basis(g_vec):
-    return sum(g_vec[i] * Pn[i] for i in range(size_pn))
+    return sum(QQ(g_vec[i]) * Pn[i] for i in range(size_pn))
 
 lift_dict = {}
 
@@ -418,8 +423,8 @@ def compute_Ruv(v):
         Ruv_const_mat = list(matrix(QQ,size_pn,size_pn))
 
     else:
-        Ruv_u_mat = [list(matrix(GF(prec_arithmetic),size_pn,size_pn)) for i in range(n+num_poly+1)]
-        Ruv_const_mat = list(matrix(GF(prec_arithmetic),size_pn,size_pn))
+        Ruv_u_mat = [list(matrix(arithmetic_ring,size_pn,size_pn)) for i in range(n+num_poly+1)]
+        Ruv_const_mat = list(matrix(arithmetic_ring,size_pn,size_pn))
 
 
 
@@ -429,8 +434,12 @@ def compute_Ruv(v):
         for j in range(n+num_poly+1):
             Ruv_u_mat[j][i] = temp[j]
         Ruv_const_mat[i] = Ruv_const_helper(v,g)
-    Ruv_const_dict[tuple(v)] = matrix(Ruv_const_mat)
-    Ruv_u_dict[tuple(v)] = tuple(matrix(Ruv_u_mat[i]) for i in range(n+num_poly+1))
+    if USE_RATIONAL_ARITHMETIC:
+        Ruv_const_dict[tuple(v)] = matrix(Ruv_const_mat)
+        Ruv_u_dict[tuple(v)] = tuple(matrix(Ruv_u_mat[i]) for i in range(n+num_poly+1))
+    else:
+        Ruv_const_dict[tuple(v)] = matrix(arithmetic_ring,Ruv_const_mat)
+        Ruv_u_dict[tuple(v)] = tuple(matrix(arithmetic_ring,Ruv_u_mat[i]) for i in range(n+num_poly+1))
     return
 
 # writes u as u' + kv with k maximal and v in P1
@@ -456,7 +465,11 @@ def compute_vk(u):
     return v,k
 
 def reduce_griffiths_dwork(u,g):
-    g_vec = vector(matrix(to_pn_basis(g)))
+    if USE_RATIONAL_ARITHMETIC:
+        g_vec = vector(matrix(to_pn_basis(g)))
+    else:
+        g_vec = vector(matrix(arithmetic_ring,to_pn_basis(g)))
+
 
     # todo: work out precise bounds!
 
@@ -479,6 +492,8 @@ def reduce_griffiths_dwork(u,g):
  
         u = [u[i] - k*v[i] for i in range(n+num_poly+1)]
 
+    # if not USE_RATIONAL_ARITHMETIC:
+        # g = R(g)
     g = from_pn_basis(g_vec)
 
     
