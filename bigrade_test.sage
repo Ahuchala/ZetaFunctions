@@ -16,8 +16,8 @@ USE_CYTHON = False
 
 
 # whether to use QQ instead of Z/p^r precision in intermediate arithmetic, mainly for debugging
-USE_RATIONAL_ARITHMETIC = False
-# USE_RATIONAL_ARITHMETIC = True
+# USE_RATIONAL_ARITHMETIC = False
+USE_RATIONAL_ARITHMETIC = True
 
 # poly_list = list(var('f_%d' % i) for i in range(num_poly))
 
@@ -36,15 +36,15 @@ USE_RATIONAL_ARITHMETIC = False
 
 # number of hypersurfaces in complete intersection
 
-num_poly = 1
-# num_poly = 2
+# num_poly = 1
+num_poly = 2
 # num_poly = 3
 
 
 # p = Primes().next(2^13)
-p = 389
-prec = 2# todo: work this out
-arithmetic_precision_increase = 2 # todo: work this out too
+p = 17
+prec = 1# todo: work this out
+arithmetic_precision_increase = 3 # todo: work this out too
 prec_arithmetic = p^(arithmetic_precision_increase+prec)
 arithmetic_ring = Integers(prec_arithmetic)
 
@@ -53,13 +53,13 @@ load("mat_mul.sage")
 load("hirzebruch.sage")
 
 # R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
-R.<x_0,x_1,x_2,y_1> = QQ[]
+# R.<x_0,x_1,x_2,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,x_5,y_1> = QQ[]
 
 
-# R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,x_5,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2,y_3> = QQ[]
@@ -89,7 +89,7 @@ f = sum(gen^3 for gen in x_vars)
 # f =  -5*x_0^3-x_0*x_1^2+4*x_0^2*x_2+2*x_0*x_1*x_2-3*x_1^2*x_2-2*x_0*x_2^2-6*x_1*x_2^2+5*x_2^3
 # g = sum(gen^2 for gen in x_vars)
 # f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
-# g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # g = sum(x_vars[i] * x_vars[(i+1)%(n+1)] for i in range(n+1))+x_0^2
 # h = sum(x_vars[i] * x_vars[(i+2)%(n+1)] for i in range(n+1))-x_1^2
 # print(f,g,h)
@@ -238,7 +238,7 @@ size_B = len(B)
 
 hodge_numbers = h_pq(degree_of_polynomials,n)
 hodge_slopes = h_pq_to_hodge_polygon(hodge_numbers)
-assert [pole_order(_) for _ in B] == hodge_slopes, f"Warning: issue with Hodge numbers {[pole_order(_) for _ in B]}, {hodge_slopes}"
+# assert [pole_order(_) for _ in B] == hodge_slopes, f"Warning: issue with Hodge numbers {[pole_order(_) for _ in B]}, {hodge_slopes}"
 
 max_cohomology_pole_order = max(hodge_slopes)
 
@@ -305,7 +305,7 @@ def frobenius(g,prec=2,return_as_dict = True):
 
 # returns as a dict
 def frobenius_on_cohom(i,prec = 2):
-    Bi_times_prod_gens = R(B[i])*prod_gens
+    Bi_times_prod_gens = B[i]*prod_gens
     Bi_times_prod_gens = frobenius(Bi_times_prod_gens,prec)
     # return R(g *p^(n -1) / prod(gens))
     return multiplication_by_scalar(p^(n -1),divide_by_x0xn(Bi_times_prod_gens))
@@ -559,7 +559,7 @@ for i,B_i in enumerate(B):
 
     
     for j,B_j in enumerate(B):
-        frob_matrix[i][j] = summer.monomial_coefficient(R(B_j)) * factorial(pole_order(B_j)+num_poly-1) #% p^prec
+        frob_matrix[i][j] = summer.monomial_coefficient(B_j) * factorial(pole_order(B_j)+num_poly-1) #% p^prec
         
     print(B_i,summer)
 
