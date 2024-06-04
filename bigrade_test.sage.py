@@ -157,7 +157,7 @@ def polynomial_multiplication(g_dict,h_dict):
 def divide_by_x0xn(g_dict):
     return_dict = {}
     for g_key in g_dict:
-        return_dict[tuple(g_key[i]-_sage_const_1  for i in range(len(g_key)))] = g_dict[g_key]
+        return_dict[tuple(g_key_i-_sage_const_1  for i,g_key_i in enumerate(g_key))] = g_dict[g_key]
     return return_dict
 
 
@@ -195,7 +195,7 @@ def run_macualay2_program(function_name, args):
     ls = ["M2", "--script", file_name, function_name]
     for arg in args:
         ls.append(str(arg))
-    a = subprocess.run(ls,capture_output=True).stdout
+    a = subprocess.run(ls,capture_output=True,check=True).stdout
     return a
 
 regex_contains_true = re.compile(r"[true]+")
@@ -230,10 +230,9 @@ def macaulay2_matrices_to_sage(s):
 
 a = str(run_macualay2_program("computeGriffithsRing", [n,poly_list,p]))
 t = macaulay2_matrices_to_sage(a)
-B = []
-for _ in t:
-    eval("B.append(R(" + _ +"))")
+B = [R(_) for _ in t]
 print(B)
+size_B = len(B)
 # assert False
 
 hodge_numbers = h_pq(degree_of_polynomials,n)
@@ -248,18 +247,14 @@ max_cohomology_pole_order = max(hodge_slopes)
 
 a = str(run_macualay2_program("computeP1", [n,poly_list,p]))
 t = macaulay2_matrices_to_sage(a)
-P1 = []
-for _ in t:
-    eval("P1.append(R(" + _ +"))")
+P1 = [R(_) for _ in t]
 # print(P1)
 
 P1_pts = [monomial_to_vector(_) for _ in P1]
 
 a = str(run_macualay2_program("computePn", [n,poly_list,p]))
 t = macaulay2_matrices_to_sage(a)
-Pn = []
-for _ in t:
-    eval("Pn.append(R(" + _ +"))")
+Pn = [R(_) for _ in t]
 
 # print(Pn)
 size_pn = len(Pn)
@@ -316,7 +311,7 @@ def frobenius_on_cohom(i,prec = _sage_const_2 ):
 
 reduction_dict = {}
 
-frob_matrix = [[_sage_const_0  for i in range(len(B))] for j in range(len(B))]
+frob_matrix = [[_sage_const_0  for i in range(size_B)] for j in range(size_B)]
 
 # in: a polynomial, typically ouput of frobenius_on_cohom
 # out: a list of tuples representing polynomials x^u g
@@ -384,7 +379,7 @@ def lift_poly(g):
     summer = (n+num_poly+_sage_const_1 ) * [_sage_const_0 ]
     for monomial in g.monomials():
 
-        if not monomial in lift_dict:
+        if monomial not in lift_dict:
             c = J(monomial).lift()
             r = (monomial-c).lift(xI)
             term = [_sage_const_0  for _ in range(n+num_poly+_sage_const_1 )]
@@ -476,7 +471,7 @@ def reduce_griffiths_dwork(u,g):
 
         v,k = compute_vk(u)
 
-        if not tuple(v) in Ruv_u_dict.keys():
+        if tuple(v) not in Ruv_u_dict:
             compute_Ruv(v)
         C = Ruv_const_dict[tuple(v)]
         D = Ruv_u_dict[tuple(v)]
@@ -506,8 +501,8 @@ def compute_new_reduce_to_B_key(key):
         if term not in QQ:  
             print(term)
             monomial = R(term.monomials()[_sage_const_0 ])
-            if not monomial in B:
-                if not monomial in reduction_dict:
+            if monomial not in B:
+                if monomial not in reduction_dict:
                     q = J(monomial).lift()
                     r = monomial - q
                     l = r.lift(I)
@@ -527,13 +522,13 @@ def compute_new_reduce_to_B_key(key):
 def reduce_to_B(h_dict):
     ans = R(_sage_const_0 )
     for key in h_dict:
-        if not key in reduce_to_B_dict:
+        if key not in reduce_to_B_dict:
             compute_new_reduce_to_B_key(key)
         ans += reduce_to_B_dict[key] * h_dict[key]
     return ans
 
 
-for i in range(len(B)):
+for i,B_i in enumerate(B):
     h = frobenius_on_cohom(i,prec)
     htemp = _sage_const_0 
     for u,g in to_ug(h):
@@ -552,10 +547,10 @@ for i in range(len(B)):
     summer = reduce_to_B(htemp.dict())
 
     
-    for j in range(len(B)):
-        frob_matrix[i][j] = summer.monomial_coefficient(R(B[j])) * factorial(pole_order(B[j])+num_poly-_sage_const_1 ) #% p^prec
+    for j,B_j in enumerate(B):
+        frob_matrix[i][j] = summer.monomial_coefficient(R(B_j)) * factorial(pole_order(B_j)+num_poly-_sage_const_1 ) #% p^prec
         
-    print(B[i],summer)
+    print(B_i,summer)
 
 if all(all(a.ord(p)>=_sage_const_0  for a in b) for b in frob_matrix):
     frob_matrix = [[a % p** prec for a in b] for b in frob_matrix]
