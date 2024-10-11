@@ -42,8 +42,8 @@ num_poly = 2
 
 
 # p = Primes().next(2^13)
-p = 17
-prec = 1# todo: work this out
+p = 7
+prec = 2# todo: work this out
 arithmetic_precision_increase = 3 # todo: work this out too
 prec_arithmetic = p^(arithmetic_precision_increase+prec)
 arithmetic_ring = Integers(prec_arithmetic)
@@ -59,8 +59,8 @@ load("hirzebruch.sage")
 # R.<x_0,x_1,x_2,x_3,x_4,x_5,y_1> = QQ[]
 
 
-R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
-# R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2> = QQ[]
+# R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,x_5,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2,y_3> = QQ[]
 
@@ -80,16 +80,16 @@ y_vars = gens[n+1:]
 # f = x_1^2*x_2-x_0^3 - x_0*x_2^2 #degenerate
 # f = x_0*x_1 + x_2*x_3 + x_4^2
 # g = 2*x_0^3+2*x_0^2*x_1+2*x_0^2*x_2+x_0*x_1*x_2-2*x_1^2*x_2-x_1*x_2^2-x_0*x_1*x_3+x_0*x_2*x_3-x_2^2*x_3+2*x_0*x_3^2+x_2*x_3^2-2*x_0^2*x_4-2*x_0*x_1*x_4+x_0*x_2*x_4-x_2^2*x_4+2*x_0*x_3*x_4-x_1*x_3*x_4+2*x_2*x_3*x_4+2*x_3^2*x_4+2*x_0*x_4^2-2*x_1*x_4^2+2*x_3*x_4^2-2*x_4^3
-f = sum(gen^3 for gen in x_vars)
-# f = sum(gen^2 for gen in x_vars)
+# f = sum(gen^3 for gen in x_vars)
+g = sum(gen^2 for gen in x_vars)
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 
 # f = x_1^2*x_2 - x_0^3 - 8*x_0*x_2^2 - 17*x_2^3
 
 # f =  -5*x_0^3-x_0*x_1^2+4*x_0^2*x_2+2*x_0*x_1*x_2-3*x_1^2*x_2-2*x_0*x_2^2-6*x_1*x_2^2+5*x_2^3
 # g = sum(gen^2 for gen in x_vars)
-# f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
-g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
+# g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # g = sum(x_vars[i] * x_vars[(i+1)%(n+1)] for i in range(n+1))+x_0^2
 # h = sum(x_vars[i] * x_vars[(i+2)%(n+1)] for i in range(n+1))-x_1^2
 # print(f,g,h)
@@ -578,3 +578,7 @@ poly = sum((poly.monomial_coefficient(mono) % p^(prec) )* mono if (poly.monomial
 print(poly)
 print(p)
 print(size_pn)
+
+
+
+

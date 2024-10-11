@@ -24,12 +24,13 @@ USE_CYTHON = False
 # num_poly = 1
 num_poly = 2
 
-p = 17
+p = 7
 # p = 10193
 prec = 2
 
 
 load("mat_mul.sage")
+
 
 R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,y_1> = QQ[]
@@ -53,10 +54,10 @@ y_vars = gens[n+1:]
 
 # f =  -5*x_0^3-x_0*x_1^2+4*x_0^2*x_2+2*x_0*x_1*x_2-3*x_1^2*x_2-2*x_0*x_2^2-6*x_1*x_2^2+5*x_2^3
 
-# f = sum([gen^2 for gen in x_vars])
+f = sum([gen^2 for gen in x_vars])
 # f = x_0^2*x_1^2 - 4*x_0^3*x_2 - 4*x_1^3*x_2 - 8*x_2^4 + 2*x_0*x_1*x_2*x_3 + x_2^2*x_3^2 - 4*x_0*x_1^2*x_4 - 4*x_0*x_2^2*x_4 - 4*x_3^3*x_4 + 2*x_0*x_1*x_4^3 + 2*x_2*x_3*x_4^2 + x_4^4
 
-f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
+# f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
 # f = x_0^2 + x_1^2 + x_2^2 + x_3^2
 g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
 # h = x_0*x_1 + x_1*x_2 + x_2*x_3
@@ -141,7 +142,7 @@ for _ in t:
     if _ != "":
         eval("B.append(R(" + _ +"))")
 print(B)
-assert False
+# assert False
 
 max_cohomology_pole_order = max([pole_order(_) for _ in B])
 

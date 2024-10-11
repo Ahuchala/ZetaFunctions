@@ -6,8 +6,8 @@ USE_CYTHON = False
 
 
 # whether to use QQ instead of Z/p^r precision in intermediate arithmetic, mainly for debugging
-USE_RATIONAL_ARITHMETIC = False
-# USE_RATIONAL_ARITHMETIC = True
+# USE_RATIONAL_ARITHMETIC = False
+USE_RATIONAL_ARITHMETIC = True
 
 # poly_list = list(var('f_%d' % i) for i in range(num_poly))
 
@@ -32,7 +32,7 @@ num_poly = 2
 
 
 # p = Primes().next(2^13)
-p = 11
+p = 7
 prec = 2 # todo: work this out
 arithmetic_precision_increase = 2 # todo: work this out too
 prec_arithmetic = p^(arithmetic_precision_increase+prec)
