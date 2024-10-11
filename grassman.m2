@@ -5,16 +5,8 @@ k = 2
 K = QQ
 
 -- access generators like p_(0,2)
--- I=Grassmannian(k-1,n-1,CoefficientRing=>F); 
--- R=ring I;
+
 -- R = K[p_(0,0) .. p_(n-1,n-1)]
-
-
--- antisymmetrize_ideal = ideal flatten for i from 0 to n-1 list (
--- 	for j from i to n-1 list (
--- 		p_(i,j) + p_(j,i)
--- 	)
--- )
 
 plucker_ideal = Grassmannian(k-1,n-1,CoefficientRing=>K)
 R = ring plucker_ideal
@@ -96,7 +88,7 @@ J = trim J;
 
 
 
-S = R / J;
+S = R / (plucker_ideal + J);
 -- S = R/(plucker_ideal + J);
 -- S = R/(plucker_ideal + J + antisymmetrize_ideal);
 
