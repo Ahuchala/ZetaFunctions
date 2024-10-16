@@ -8,8 +8,8 @@ K = QQ
 
 -- R = K[p_(0,0) .. p_(n-1,n-1)]
 
-plucker_ideal = Grassmannian(k-1,n-1,CoefficientRing=>K)
-R = ring plucker_ideal
+pluckerIdeal = Grassmannian(k-1,n-1,CoefficientRing=>K)
+R = ring pluckerIdeal
 
 
 
@@ -33,25 +33,6 @@ for i from 0 to n-1 do (
 )
 
 
--- act on x_rs * x_hk with D^i_j = x_i d/dx_j
--- from bottom of page 9 of Fatighenti + Mongardi
--- differentiateMonomial = (vi,vj,vr,vs,vh,vk) -> (
--- 	ans = 0;
--- 	if vj == vr then (
--- 		ans += p_(vi,vs) * p_(vh,vk);
--- 	);
--- 	if vj == vs then (
--- 		ans += p_(vr,vi) * p_(vh,vk);
--- 	);
--- 	if vj == vh then (
--- 		ans += p_(vr,vs) * p_(vi,vk);
--- 	);
--- 	if vj == vk then (
--- 		ans += p_(vr,vs) * p_(vh,vi);
--- 	);
--- 	return ans;
--- );
-
 
 differentiatePolynomial = (i,j,f) -> (
 	-- M,C -> monomial, coefficient matrices
@@ -62,35 +43,22 @@ differentiatePolynomial = (i,j,f) -> (
 
 
 
--- for i from 0 to n-1 do (
--- 	for j from i+1 to n-1 do (
--- 		-- act on f with D^i_j = x_i d/dx_j
--- 		-- this will be zero except on terms with j in the index
--- 		-- ie a x_{jl} -> a x_{il}
--- 		ans = 0;
--- 		for l from j+1 to n-1 do (
--- 			ans += coefficient(f,p_(j,l)) * p_(i,l);
--- 		)
--- 		-- ls = append(ls,ans);
--- 	)
--- )
-
 -- Jacobian ideal J
-J = ideal flatten flatten for i from 0 to n-1 list (
-	for j from 0 to n-1 list (
-		if i == j then {0} else (
-			{differentiatePolynomial(i,j,f), differentiatePolynomial(i,i,f)-differentiatePolynomial(j,j,f)}
-		)
+jacobianIdeal = ideal flatten flatten for i from 0 to n-1 list (
+	for j from i+1 to n-1 list (
+		{differentiatePolynomial(i,j,f),
+		differentiatePolynomial(j,i,f), 
+		differentiatePolynomial(i,i,f)-differentiatePolynomial(j,j,f)}
 	)
 )
 
-J = trim J;
+jacobianIdeal = trim (jacobianIdeal + ideal f);
 
 
 
-S = R / (plucker_ideal + J);
--- S = R/(plucker_ideal + J);
--- S = R/(plucker_ideal + J + antisymmetrize_ideal);
+J = R / (pluckerIdeal + jacobianIdeal);
+-- S = R/(pluckerIdeal + J);
+-- S = R/(pluckerIdeal + J + antisymmetrize_ideal);
 
-for i from 0 to 10 list hilbertFunction(i,S)
+for i from 0 to 10 list hilbertFunction(i,J)
 
