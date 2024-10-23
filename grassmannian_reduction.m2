@@ -58,8 +58,7 @@ I = ideal flatten flatten for i from 0 to n-1 list (
 gensI = gens I;
 -- I = trim (I + ideal f);
 
--- some i,j not needed to generate I
-irrelevant_ij = {}
+
 for i from 0 to n-1 list (
 	for j from i+1 to n-1 list (
 		{differentiatePolynomial(i,j,f),
@@ -93,38 +92,60 @@ for i from 1 to n-1 do if i == k*(n-k)/2 then print concatenate("Warning: nontri
 -- a in b -> b#?a
 for i from 1 to n-1 do if ZZ#? ((2*n-1-d)/3) or ZZ#? ((4*n-9-d)/3) then print concatenate("Potential error with i =",toString i) else continue
 
+use R
 g = sum(apply(gensR, i-> i^8))
+
+
+-- frobenius = (g,prec=2,return_as_dict = True) -> (
+--     d = pole_order(g)
+--     summer_dict = {}
+--     sigma_g_dict = sigma(g,True)
+--     fj = R(1)
+
+--     for j in range(prec):
+-- #        cacheing may be appropriate
+--         const = binomial(-d,j) * binomial(d+prec-1,d+j)
+--         numer =  multiplication_by_scalar(const,polynomial_multiplication(sigma_g_dict,sigma(fj,True)))
+--         summer_dict |= numer
+--         # summer += numer
+--         fj *= F
+--     if return_as_dict:
+--         return summer_dict
+--     return R(summer_dict)
+
+
 
 -- In: polynomial g representing form g/f^d * omega
 -- Out: equivalent elements of B modulo griffiths-dwork relations
--- reducePolynomial = (g) -> (
--- -- idea: naive griffiths-dwork reduction taking g in the jacobian ideal, ie
--- -- g = sum a_ij D_ij f + sum b_ij (D_ii f - D_jj f)
--- --   == sum D_ij a_ij + sum (D_ii - D_jj) b_ij
---     ans = 0;
---     degreeg = (degree g)#0;
---     for i from 0 to (degreeg) // degf do (
---         h = g % I;
---         g -= h;
---         ans += h;
---         ls = g // gensI;
---         g = 0;
---         ind = 0;
---         for i from 0 to n-1 do (
---             for j from i+1 to n-1 do (
---                 g += differentiatePolynomial(i,j,ls#ind);
---                 g += differentiatePolynomial(j,i,ls#(ind+1));
---                 g += differentiatePolynomial(i,i,ls#(ind+2))-differentiatePolynomial(j,j,ls#(ind+2));
---                 ind += 3;
---             );
---         );
---         -- for j from i+1 to n-1 list (
--- 		-- {differentiatePolynomial(i,j,f),
--- 		-- differentiatePolynomial(j,i,f), 
--- 		-- differentiatePolynomial(i,i,f)-differentiatePolynomial(j,j,f)}
+reducePolynomial = (g) -> (
+-- idea: naive griffiths-dwork reduction taking g in the jacobian ideal, ie
+-- g = sum a_ij D_ij f + sum b_ij (D_ii f - D_jj f)
+--   == sum D_ij a_ij + sum (D_ii - D_jj) b_ij
+    ans = 0;
+    degreeg = (degree g)#0;
+    for i from 0 to (degreeg) // degf do (
+        h = g % I;
+        g -= h;
+        ans += h;
+        ls = flatten entries (g // gensI);
+        g = 0;
+        ind = 0;
+        for i from 0 to n-1 do (
+            for j from i+1 to n-1 do (
+                g += differentiatePolynomial(i,j,ls#ind);
+                g += differentiatePolynomial(j,i,ls#(ind+1));
+                g += differentiatePolynomial(i,i,ls#(ind+2))-differentiatePolynomial(j,j,ls#(ind+2));
+                ind += 3;
+            );
+        );
+        -- for j from i+1 to n-1 list (
+		-- {differentiatePolynomial(i,j,f),
+		-- differentiatePolynomial(j,i,f), 
+		-- differentiatePolynomial(i,i,f)-differentiatePolynomial(j,j,f)}
 
---     );
--- );
+    );
+	return ans;
+);
 
--- reducePolynomial(g)
+reducePolynomial(g)
 
