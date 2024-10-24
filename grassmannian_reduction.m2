@@ -1,8 +1,13 @@
+q = 7
 -- p = 7
-n = 4
+
+
+n = 5
 k = 2
 -- K = ZZ/p
 K = QQ
+
+prec = 2
 
 -- access generators like p_(0,2)
 
@@ -95,25 +100,25 @@ for i from 1 to n-1 do if ZZ#? ((2*n-1-d)/3) or ZZ#? ((4*n-9-d)/3) then print co
 use R
 g = sum(apply(gensR, i-> i^8))
 
+-- pth power on monomials, identity on coefficients
+sigma = (g) -> (
+	(mons,coeff) = coefficients(g);
+	return (flatten entries (matrix {apply(flatten entries mons,i->i^q)} * coeff))#0;
+);
 
--- frobenius = (g,prec=2,return_as_dict = True) -> (
---     d = pole_order(g)
---     summer_dict = {}
---     sigma_g_dict = sigma(g,True)
---     fj = R(1)
-
---     for j in range(prec):
--- #        cacheing may be appropriate
---         const = binomial(-d,j) * binomial(d+prec-1,d+j)
---         numer =  multiplication_by_scalar(const,polynomial_multiplication(sigma_g_dict,sigma(fj,True)))
---         summer_dict |= numer
---         # summer += numer
---         fj *= F
---     if return_as_dict:
---         return summer_dict
---     return R(summer_dict)
-
-
+frobenius = (b,prec) -> (
+	degreeg = (degree b)#0;
+	d = (degreeg) // degf;
+	summer = 0;
+	sigmag = sigma(b);
+	fj = 1;
+	for j from 0 to prec-1 do (
+		const = binomial(-d,j) * binomial(d+prec-1,d+j);
+		summer += const * sigmag * fj;
+		fj *= f;
+	);
+	return summer;
+);
 
 -- In: polynomial g representing form g/f^d * omega
 -- Out: equivalent elements of B modulo griffiths-dwork relations
@@ -138,14 +143,15 @@ reducePolynomial = (g) -> (
                 ind += 3;
             );
         );
-        -- for j from i+1 to n-1 list (
-		-- {differentiatePolynomial(i,j,f),
-		-- differentiatePolynomial(j,i,f), 
-		-- differentiatePolynomial(i,i,f)-differentiatePolynomial(j,j,f)}
-
     );
 	return ans;
 );
 
-reducePolynomial(g)
 
+frobOnCohom = (g) -> (
+	return substitute(frobenius(g * (product gens R),prec) / (product gens R),R);
+);
+
+-- substitute((flatten entries basis(1,J))#0,R)
+-- h = frobOnCohom(substitute((flatten entries basis(1,J))#0,R))
+-- reducePolynomial(h)
