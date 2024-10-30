@@ -5,8 +5,8 @@ q = 7
 -- p = 7
 
 
-n = 4
-k = 2
+n = 5
+k = 3
 -- K = ZZ/p
 K = QQ
 
@@ -34,7 +34,6 @@ f = random(2,R)
 
 d = (degree f)#0;
 degf = d;
-
 
 countInversions = (perm) -> (
     lenPerm = #perm;
@@ -68,6 +67,17 @@ for inds in multiSubsets(n,k) do (
         p_(toSequence inds) = 0;
     )
 )
+
+
+for i from 0 to n-1 do (
+	for j from i+1 to n-1 do (
+		p_(j,i) = -p_(i,j)
+	)
+)
+for i from 0 to n-1 do (
+	p_(i,i) = 0
+)
+
 
 
 differentiatePolynomial = (i,j,f) -> (
