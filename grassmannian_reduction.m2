@@ -5,7 +5,7 @@ q = 7
 -- p = 7
 
 
-n = 4
+n = 5
 k = 2
 -- K = ZZ/p
 K = QQ
@@ -55,19 +55,15 @@ noDuplicates = (ls) -> (
 )
 
 -- define all k wedges of x_i
-for inds in subsets(n,k) do (
-    -- e.g. set p_(i,j,k) = -p_(j,i,k)
-    for perm in permutations(inds) do (
+for inds in multiSubsets(n,k) do (
+	-- set all x_i wedge x_i to zero
+	if (not noDuplicates(inds)) then (
+        p_(toSequence inds) = 0;
+    ) else for perm in permutations(inds) do (
+		-- e.g. set p_(i,j,k) = -p_(j,i,k)
         p_(toSequence perm) = (-1)^(countInversions(perm)) * p_(toSequence inds);
     );
 );
-
--- set all x_i wedge x_i to zero
-for inds in multiSubsets(n,k) do (
-    if (not noDuplicates(inds)) then (
-        p_(toSequence inds) = 0;
-    )
-)
 
 
 differentiatePolynomial = (i,j,f) -> (
