@@ -50,14 +50,14 @@ countInversions = (perm) -> (
 );
 
 -- (1,2,3) -> false, (2,2,3) -> true
-noDuplicates = (ls) -> (
-    return unique ls == ls;
-)
+hasDuplicates = (ls) -> (
+    return unique ls != ls;
+);
 
 -- define all k wedges of x_i
 for inds in multiSubsets(n,k) do (
 	-- set all x_i wedge x_i to zero
-	if (not noDuplicates(inds)) then (
+	if (hasDuplicates(inds)) then (
         p_(toSequence inds) = 0;
     ) else for perm in permutations(inds) do (
 		-- e.g. set p_(i,j,k) = -p_(j,i,k)
