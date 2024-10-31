@@ -6,7 +6,7 @@ q = 7
 
 
 n = 5
-k = 2
+k = 3
 -- K = ZZ/p
 K = QQ
 
@@ -58,7 +58,9 @@ hasDuplicates = (ls) -> (
 for inds in multiSubsets(n,k) do (
 	-- set all x_i wedge x_i to zero
 	if (hasDuplicates(inds)) then (
-        p_(toSequence inds) = 0;
+        for perm in permutations(inds) do (
+            p_(toSequence perm) = 0;
+        );
     ) else for perm in permutations(inds) do (
 		-- e.g. set p_(i,j,k) = -p_(j,i,k)
         p_(toSequence perm) = (-1)^(countInversions(perm)) * p_(toSequence inds);
@@ -66,11 +68,55 @@ for inds in multiSubsets(n,k) do (
 );
 
 
-differentiatePolynomial = (i,j,f) -> (
-	-- M,C -> monomial, coefficient matrices
-	return sum for k from 0 to n-1 list (
-		if k == j or k == i then 0 else p_(k,i) * diff(p_(k,j), f)
-	)
+-- e.g. p_(0,1) -> (0,1)
+getIndex = (mon) -> (
+    return (baseName mon)#1;
+);
+
+-- acts on wedges like (V = \wedge)
+-- x_i1 V x_i1 V ... V x_ik -> D(x_i1) V x_i2 V ... V x_ik + ... + x_i1 V x_i2 V ... V D(x_ik)
+
+
+
+differentiateWedge = (i,j,wedge) -> (
+    (mons2,coeff2) = coefficients(wedge);
+	return sum (flatten entries (matrix {apply(flatten entries mons2,lambda->differentiateSingleWedge(i,j,lambda))} * coeff2));
+);
+
+differentiateSingleWedge = (i,j,wedge) -> (
+    -- todo: use the dang power rule
+    ls = getIndex(wedge);
+    if (not member(j,ls)) then (
+        return 0;
+    );
+    -- set j to i
+    return p_(replace(position(ls, lambda->lambda==j),i,ls));
+);
+
+-- extends to Sym^r via Leibniz
+differentiatePolynomial = (i,j,g) -> (
+    ans = 0;
+    (mons,coeff) = coefficients(g);
+    mons = flatten entries mons ;
+    coeff = flatten entries coeff;
+    -- now an entry of mons is a symmetric tensor of pure wedges
+    for monInd from 0 to (#coeff-1) do (
+        monAns = 0;
+        h = mons#monInd;
+        exps = (exponents h)#0; --e.g. {0, 0, 0, 0, 0, 2}
+        -- len gensR = k+n-1 choose k-1
+        monomialList = {};
+        for ind from 0 to (binomial(n,k)-1) do (
+            for blah from 0 to ((exps#ind)-1) do (
+                monomialList |= {gensR#ind};
+            );
+        );
+        for ind from 0 to (#monomialList - 1) do (
+            monAns += product replace(ind,differentiateWedge(i,j,monomialList#ind),monomialList);
+        );
+        ans += (coeff#monInd) * monAns;
+    );
+    return ans;
 );
 
 
@@ -109,8 +155,8 @@ for i from 1 to n-1 list hilbertFunction((i+1)*d - n,J)
 
 for i from 1 to n-1 do if i == k*(n-k)/2 then print concatenate("Warning: nontrivial cokernel contribution for i =",toString i) else continue
 
-
--- a in b -> b#?a
+-- warning: this is terrible notation; use member(b,a)
+-- a #? b checks if a has a bth element
 for i from 1 to n-1 do if ZZ#? ((2*n-1-d)/3) or ZZ#? ((4*n-9-d)/3) then print concatenate("Potential error with i =",toString i) else continue
 
 use R
