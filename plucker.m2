@@ -1,16 +1,16 @@
 loadPackage "Resultants"
-loadPackage "TensorComplexes"
+loadPackage "TensorComplexes" -- for multiSubsets function
 
-q = 7
+q = 5
 -- p = 7
 
 
-n = 5
-k = 3
+n = 4
+k = 2
 -- K = ZZ/p
 K = QQ
 
-prec = 2
+prec = 1
 
 -- access generators like p_(0,2)
 
@@ -28,7 +28,7 @@ numGens = #gensR
 -- f = sum(apply(gensR, i->i^2))
 
 -- hypersurface V(f)
-f = random(2,R)
+f = random(3,R)
 -- f = p_(0,1)^2 + 2*p_(0,2)^2 +4*p_(0,3)^2 + 5*p_(0,4)^2 + 6*p_(1,2)^2+11*p_(1,3)^2+75*p_(1,4)^2+13*p_(2,3)^2+43*p_(2,4)^2+8*p_(3,4)^2
 -- f = x01^2+2*x02^2+4*x03^2+5*x04^2+6*x12^2+11*x13^2+75*x14^2+13*x23^2+43*x24^2+8*x34^2
 
@@ -84,7 +84,6 @@ differentiateWedge = (i,j,wedge) -> (
 );
 
 differentiateSingleWedge = (i,j,wedge) -> (
-    -- todo: use the dang power rule
     ls = getIndex(wedge);
     if (not member(j,ls)) then (
         return 0;
@@ -103,6 +102,7 @@ differentiatePolynomial = (i,j,g) -> (
     for monInd from 0 to (#coeff-1) do (
         monAns = 0;
         h = mons#monInd;
+        -- todo: use the dang power rule
         exps = (exponents h)#0; --e.g. {0, 0, 0, 0, 0, 2}
         -- len gensR = k+n-1 choose k-1
         monomialList = {};
@@ -135,15 +135,6 @@ gensI = gens I;
 -- I = trim (I + ideal f);
 
 
-for i from 0 to n-1 list (
-	for j from i+1 to n-1 list (
-		{differentiatePolynomial(i,j,f),
-		differentiatePolynomial(j,i,f), 
-		differentiatePolynomial(i,i,f)-differentiatePolynomial(j,j,f)}
-	)
-)
-
-
 
 
 J = R / (pluckerIdeal + I);
@@ -151,13 +142,14 @@ J = R / (pluckerIdeal + I);
 -- S = R/(pluckerIdeal + J + antisymmetrize_ideal);
 
 -- Hodge numbers of primitive cohomology
+-- (R_f)_{(p+1)d-n} = H^{N-1-p,p}
 for i from 1 to n-1 list hilbertFunction((i+1)*d - n,J)
 
 for i from 1 to n-1 do if i == k*(n-k)/2 then print concatenate("Warning: nontrivial cokernel contribution for i =",toString i) else continue
 
--- warning: this is terrible notation; use member(b,a)
--- a #? b checks if a has a bth element
-for i from 1 to n-1 do if ZZ#? ((2*n-1-d)/3) or ZZ#? ((4*n-9-d)/3) then print concatenate("Potential error with i =",toString i) else continue
+
+-- e.g. 3/3 == 1
+for i from 1 to n-1 do if (i==((2*n-1-d)/3) or i==((4*n-9-d)/3)) then print concatenate("Potential error with i =",toString i) else continue
 
 use R
 g = sum(apply(gensR, i-> i^8))
@@ -211,10 +203,10 @@ reducePolynomial = (g) -> (
 );
 
 
--- frobOnCohom = (g) -> (
--- 	return substitute(frobenius(g * (product gens R),prec) / (product gens R),R);
--- );
+frobOnCohom = (g) -> (
+	return substitute(frobenius(g * (product gens R),prec) / (product gens R),R);
+);
 
--- -- substitute((flatten entries basis(1,J))#0,R)
--- h = frobOnCohom(substitute((flatten entries basis(1,J))#0,R))
+-- substitute((flatten entries basis(2,J))#0,R)
+-- h = frobOnCohom(substitute((flatten entries basis(2,J))#0,R))
 -- reducePolynomial(h)

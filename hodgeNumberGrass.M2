@@ -1,21 +1,25 @@
 loadPackage "Schubert2"
 
-k = 3
-n = 4
+k = 2
+n = 5
 
-d = 0
+d = [2,3]
 
 
 
 
 G = flagBundle {k,n-k} -- secretly Gr(k,n)
-for d from 1 to 25 list (
-    X = sectionZeroLocus(OO_G(d)); -- quadric and a cubic
-    OmG = cotangentBundle G;
-    OmX = cotangentBundle X;
+-- for d from 1 to 25 list (
+X = sectionZeroLocus(sum for i from 1 to #d list OO_G(i)); -- quadric and a cubic
+OmG = cotangentBundle G;
+OmX = cotangentBundle X;
 
-    ls = for i from 0 to floor(dim X / 2) list
-        abs(chi exteriorPower(i, OmX) - chi exteriorPower(i, OmG));
+ls = for i from 0 to floor(dim X / 2) list
+    abs(chi exteriorPower(i, OmX) - chi exteriorPower(i, OmG));
 
-    print (join(ls,reverse ls))#0
-)
+if (n % 2 ==1) then (
+    print join(ls,reverse ls);
+) else (
+-- include the second half, but don't repeat middle element
+print (join(ls, for i from 1 to #ls-1  list ls#(#ls-i-1)));
+);

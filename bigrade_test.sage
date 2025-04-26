@@ -16,8 +16,8 @@ USE_CYTHON = False
 
 
 # whether to use QQ instead of Z/p^r precision in intermediate arithmetic, mainly for debugging
-# USE_RATIONAL_ARITHMETIC = False
-USE_RATIONAL_ARITHMETIC = True
+#USE_RATIONAL_ARITHMETIC = False
+#USE_RATIONAL_ARITHMETIC = True
 
 # poly_list = list(var('f_%d' % i) for i in range(num_poly))
 
@@ -52,15 +52,15 @@ arithmetic_ring = Integers(prec_arithmetic)
 load("mat_mul.sage")
 load("hirzebruch.sage")
 
-# R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,x_5,y_1> = QQ[]
 
 
-# R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
-R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2> = QQ[]
+#R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+#R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,x_5,y_1,y_2> = QQ[]
 # R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2,y_3> = QQ[]
 
