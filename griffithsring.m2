@@ -1,5 +1,6 @@
 loadPackage "Resultants"
 loadPackage "TensorComplexes" -- for multiSubsets function
+loadPackage "Divisor"
 
 q = 7
 -- p = 7
@@ -25,12 +26,16 @@ R = ring pluckerIdeal
 gensR = gens R
 numGens = #gensR
 
--- f = sum(apply(gensR, i->(i)^2))
+-- f = -46*p_(0,1)^3-39*p_(0,2)^3+p_(0,1)*p_(0,2)*p_(1,2)+35*p_(1,2)^3+12*p_(0,3)^3+36*p_(1,3)^3+43*p_(2,3)^3+p_(0,4)^3-5*p_(1,4)^3+4*p_(2,4)^3-24*p_(3,4)^3
 
+f = sum(apply(gensR, i->random(QQ)*(i)^3))
+-- f += random(QQ)*gensR#0 * gensR#1 * gensR#2^2
 -- hypersurface V(f)
-f = random(2,R)
+-- f = random(3,R)
 -- f = p_(0,1)^2 + 2*p_(0,2)^2 +4*p_(0,3)^2 + 5*p_(0,4)^2 + 6*p_(1,2)^2+11*p_(1,3)^2+75*p_(1,4)^2+13*p_(2,3)^2+43*p_(2,4)^2+8*p_(3,4)^2
 -- f = x01^2+2*x02^2+4*x03^2+5*x04^2+6*x12^2+11*x13^2+75*x14^2+13*x23^2+43*x24^2+8*x34^2
+
+assert isSmooth(ideal f,IsGraded=>true)
 
 d = (degree f)#0;
 degf = d;
@@ -89,6 +94,7 @@ exponentToMonomial = (ls) -> (
     return product (for i from 0 to (numGens-1) list (gensR#i) ^ (ls#i));
 );
 
+-- this only works for p_I^j, not products
 differentiateMonomial = (i,j,mon) -> (
     monomialIndex = (exponents (mon))#0;
     -- silly way to find the single exponent that shows up
@@ -100,11 +106,11 @@ differentiateMonomial = (i,j,mon) -> (
     if (not member(j,ls)) then (
         return 0;
     );
-    if ( member(i,ls)) then (
+    if (i!=j) and( member(i,ls)) then (
         return 0;
     );
 
-    -- set j to i
+    -- set j to i (replace copies then edits a list)
     return exponent * p_(replace(position(ls, lambda->lambda==j),i,ls)) * p_ls^(exponent-1);
 );
 
@@ -143,6 +149,7 @@ I = ideal flatten (flatten for i from 0 to n-1 list differentiatePolynomial(i,i,
 		-- differentiatePolynomial(i,i,f)-differentiatePolynomial(j,j,f)}
 	)
 ));
+
 -- I += ideal flatten for i from 0 to n-1 list differentiatePolynomial(i,i,f)
 
 -- I = trim I;
@@ -157,7 +164,7 @@ J = R /  (I + pluckerIdeal);
 
 -- Hodge numbers of primitive cohomology
 -- (R_f)_{(p+1)d-n} = H^{N-1-p,p}
-for i from 1 to n-1 list hilbertFunction((i+1)*d - n,J)
+for i from 0 to n-1 list hilbertFunction((i+1)*d - n,J)
 
 
 for i from 1 to n-1 do if i == k*(n-k)/2 then print concatenate("Warning: nontrivial cokernel contribution for i =",toString i) else continue

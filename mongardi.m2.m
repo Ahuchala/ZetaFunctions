@@ -25,7 +25,7 @@ R = ring pluckerIdeal
 gensR = gens R
 numGens = #gensR
 
-f = sum(apply(gensR, i->(i)^3))
+f = sum(apply(gensR, i->(i)^2))
 
 -- hypersurface V(f)
 -- f = random(3,R)
