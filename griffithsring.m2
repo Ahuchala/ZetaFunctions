@@ -1,45 +1,67 @@
-loadPackage "Resultants"
-loadPackage "TensorComplexes" -- for multiSubsets function
-loadPackage "Divisor"
+loadPackage "Resultants";
+loadPackage "TensorComplexes"; -- for multiSubsets function
+loadPackage "Divisor";
 
-q = 7
+-- q = 991
 -- p = 7
 
 
-n = 5
-k = 2
+n = 5;
+k = 3;
 -- K = ZZ/q
-K = QQ
+K = QQ;
 
-prec = 1
+prec = 1;
 
 -- access generators like p_(0,2)
 
 -- R = K[p_(0,0) .. p_(n-1,n-1)]
 
-pluckerIdeal = Grassmannian(k-1,n-1,CoefficientRing=>K)
-R = ring pluckerIdeal
+pluckerIdeal = Grassmannian(k-1,n-1,CoefficientRing=>K);
+R = ring pluckerIdeal;
 
 
 
 
-gensR = gens R
-numGens = #gensR
+gensR = gens R;
+numGens = #gensR;
 
 -- f = -46*p_(0,1)^3-39*p_(0,2)^3+p_(0,1)*p_(0,2)*p_(1,2)+35*p_(1,2)^3+12*p_(0,3)^3+36*p_(1,3)^3+43*p_(2,3)^3+p_(0,4)^3-5*p_(1,4)^3+4*p_(2,4)^3-24*p_(3,4)^3
 
-f = sum(apply(gensR, i->random(QQ)*(i)^3))
+--       3 4         4       7 4       1 4       5 4       5 4       7 4       9 4      
+-- o12 = -p      + 2p      + -p      + -p      + -p      + -p      + -p      + -p      +
+--       7 0,1,2     0,1,3   5 0,2,3   3 1,2,3   9 0,1,4   2 0,2,4   8 1,2,4   5 0,3,4  
+--       ------------------------------------------------------------------------------------
+--       3 4        7 4
+--       -p      + --p
+--       7 1,3,4   10 2,3,4
+
+
+
+-- f = -3/7*p_(0,1,2)^4 + 2*p_(0,1,3)^4 - 7/5*p_(0,2,3)^4 - 1/3*p_(1,2,3)^4 - 5/9*p_(0,1,4)^4 - 5/2*p_(0,2,4)^4 - 7/8*p_(1,2,4)^4 - 9/5*p_(0,3,4)^4 - 3/7*p_(1,3,4)^4 + 7/10*p_(2,3,4)^4
+
+
+
+f = sum(apply(gensR, i->random(K)*(i)^4))
 -- f += random(QQ)*gensR#0 * gensR#1 * gensR#2^2
 -- hypersurface V(f)
 -- f = random(3,R)
 -- f = p_(0,1)^2 + 2*p_(0,2)^2 +4*p_(0,3)^2 + 5*p_(0,4)^2 + 6*p_(1,2)^2+11*p_(1,3)^2+75*p_(1,4)^2+13*p_(2,3)^2+43*p_(2,4)^2+8*p_(3,4)^2
 -- f = x01^2+2*x02^2+4*x03^2+5*x04^2+6*x12^2+11*x13^2+75*x14^2+13*x23^2+43*x24^2+8*x34^2
 
-assert isSmooth(ideal f,IsGraded=>true)
-
 d = (degree f)#0;
 degf = d;
 
+
+print "Smoothness check"
+assert isSmooth(ideal f,IsGraded=>true)
+
+print "Divisibility check"
+
+-- check Fern and my vanishings
+for t from 1 to n //d do (
+    assert not (n % (t*d)==0 and k*d*t % n == 0)
+);
 
 
 countInversions = (perm) -> (
