@@ -7,7 +7,7 @@ loadPackage "Divisor";
 
 
 n = 5;
-k = 3;
+k = 2;
 -- K = ZZ/q
 K = QQ;
 
@@ -42,10 +42,10 @@ numGens = #gensR;
 
 
 
-f = sum(apply(gensR, i->random(K)*(i)^4))
+f = sum(apply(gensR, i->random(K)*(i)^2))
 -- f += random(QQ)*gensR#0 * gensR#1 * gensR#2^2
 -- hypersurface V(f)
--- f = random(3,R)
+-- f = random(2,R)
 -- f = p_(0,1)^2 + 2*p_(0,2)^2 +4*p_(0,3)^2 + 5*p_(0,4)^2 + 6*p_(1,2)^2+11*p_(1,3)^2+75*p_(1,4)^2+13*p_(2,3)^2+43*p_(2,4)^2+8*p_(3,4)^2
 -- f = x01^2+2*x02^2+4*x03^2+5*x04^2+6*x12^2+11*x13^2+75*x14^2+13*x23^2+43*x24^2+8*x34^2
 
