@@ -19,7 +19,6 @@ USE_CYTHON = False
 
 num_poly = 2
 
-# want -1 square mod p
 p = 17
 prec = 3
 
