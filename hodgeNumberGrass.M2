@@ -1,9 +1,9 @@
 loadPackage "Schubert2"
 
-k = 2
-n = 5
+k = 3
+n = 7
 
-d = [2,3]
+d = [1]
 
 
 

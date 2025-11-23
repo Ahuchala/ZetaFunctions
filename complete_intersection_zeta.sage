@@ -19,13 +19,13 @@ USE_CYTHON = False
 
 num_poly = 2
 
-p = 17
-prec = 3
+p = 13
+prec = 2
 
 
 load("mat_mul.sage")
 
-R.<x_0,x_1,x_2,x_3,y_1,y_2> = QQ[]
+R.<x_0,x_1,x_2,x_3,x_4,y_1,y_2> = QQ[]
 
 
 gens = R.gens()
@@ -39,8 +39,12 @@ y_vars = gens[n+1:]
 # maybe compute by first all monomials in J_p,m for fixed p, then finding a basis
 
 
-f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
-g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+# f = x_0^3 + x_1^3 + x_2^3 - x_0*x_1*x_2 + x_3^3
+# g = x_0^2 + 2*x_1^2 + 3*x_2^2 + 4*x_3^2
+f = x_0 *x_2 + x_1* x_3 + x_4^2 
+
+
+g = -x_0^3-22*x_0^2*x_1+46*x_0*x_1^2+12*x_1^3-35*x_0^2*x_2-34*x_0*x_1*x_2+36*x_1^2*x_2-43*x_0*x_2^2+16*x_1*x_2^2-34*x_2^3+38*x_0^2*x_3+23*x_0*x_1*x_3-22*x_1^2*x_3-43*x_0*x_2*x_3+37*x_1*x_2*x_3+46*x_2^2*x_3-2*x_0*x_3^2-19*x_1*x_3^2+49*x_2*x_3^2-30*x_0^2*x_4-12*x_0*x_1*x_4-40*x_1^2*x_4+20*x_0*x_2*x_4+17*x_1*x_2*x_4-35*x_2^2*x_4-15*x_0*x_3*x_4-49*x_1*x_3*x_4-38*x_2*x_3*x_4-2*x_0*x_4^2-33*x_1*x_4^2-4*x_2*x_4^2
 
 poly_list = [f]
 if num_poly == 2:

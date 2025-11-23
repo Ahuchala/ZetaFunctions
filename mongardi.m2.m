@@ -5,7 +5,7 @@ q = 7
 -- p = 7
 
 
-n = 5
+n = 7
 k = 2
 -- K = ZZ/q
 K = QQ
@@ -25,7 +25,7 @@ R = ring pluckerIdeal
 gensR = gens R
 numGens = #gensR
 
-f = sum(apply(gensR, i->(i)^2))
+f = sum(apply(gensR, i->random(0,R)*(i)^2))
 
 -- hypersurface V(f)
 -- f = random(3,R)

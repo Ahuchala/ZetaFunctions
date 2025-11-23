@@ -6,8 +6,9 @@ loadPackage "Divisor";
 -- p = 7
 
 
-n = 5;
-k = 2;
+n = 9;
+k = 4;
+d = 1;
 -- K = ZZ/q
 K = QQ;
 
@@ -42,7 +43,7 @@ numGens = #gensR;
 
 
 
-f = sum(apply(gensR, i->random(K)*(i)^2))
+f = sum(apply(gensR, i->random(K)*(i)^d))
 -- f += random(QQ)*gensR#0 * gensR#1 * gensR#2^2
 -- hypersurface V(f)
 -- f = random(2,R)
@@ -60,6 +61,7 @@ print "Divisibility check"
 
 -- check Fern and my vanishings
 for t from 1 to n //d do (
+    print(t);
     assert not (n % (t*d)==0 and k*d*t % n == 0)
 );
 
@@ -186,7 +188,7 @@ J = R /  (I + pluckerIdeal);
 
 -- Hodge numbers of primitive cohomology
 -- (R_f)_{(p+1)d-n} = H^{N-1-p,p}
-for i from 0 to n-1 list hilbertFunction((i+1)*d - n,J)
+for i from 0 to n+1 list hilbertFunction((i+1)*d - n,J)
 
 
 for i from 1 to n-1 do if i == k*(n-k)/2 then print concatenate("Warning: nontrivial cokernel contribution for i =",toString i) else continue
@@ -194,3 +196,34 @@ for i from 1 to n-1 do if i == k*(n-k)/2 then print concatenate("Warning: nontri
 
 -- e.g. 3/3 == 1
 for i from 1 to n-1 do if (i==((2*n-1-d)/3) or i==((4*n-9-d)/3)) then print concatenate("Potential error with i =",toString i) else continue
+
+
+print "Expected Hodge numbers:"
+
+loadPackage "Schubert2"
+
+-- k = 3
+-- n = 7
+
+-- d = toList(d)
+
+
+
+
+G = flagBundle {k,n-k} -- secretly Gr(k,n)
+-- for d from 1 to 25 list (
+-- X = sectionZeroLocus(sum for i from 1 to #d list OO_G(i)); -- quadric and a cubic
+X = sectionZeroLocus(OO_G(d)); 
+
+OmG = cotangentBundle G;
+OmX = cotangentBundle X;
+
+ls = for i from 0 to floor(dim X / 2) list
+    abs(chi exteriorPower(i, OmX) - chi exteriorPower(i, OmG));
+
+if (n % 2 ==1) then (
+    print join(ls,reverse ls);
+) else (
+-- include the second half, but don't repeat middle element
+print (join(ls, for i from 1 to #ls-1  list ls#(#ls-i-1)));
+);
