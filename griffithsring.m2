@@ -1,14 +1,15 @@
-loadPackage "Resultants";
-loadPackage "TensorComplexes"; -- for multiSubsets function
-loadPackage "Divisor";
+needsPackage "Resultants";
+needsPackage "TensorComplexes"; -- for multiSubsets function
+needsPackage "Divisor";
+needsPackage "Schubert2"; -- for Hodge number verification
 
 -- q = 991
 -- p = 7
 
 
-n = 9;
-k = 4;
-d = 1;
+n = 5;
+k = 3;
+d = 4;
 -- K = ZZ/q
 K = QQ;
 
@@ -46,7 +47,7 @@ numGens = #gensR;
 f = sum(apply(gensR, i->random(K)*(i)^d))
 -- f += random(QQ)*gensR#0 * gensR#1 * gensR#2^2
 -- hypersurface V(f)
--- f = random(2,R)
+-- f = random(d,R)
 -- f = p_(0,1)^2 + 2*p_(0,2)^2 +4*p_(0,3)^2 + 5*p_(0,4)^2 + 6*p_(1,2)^2+11*p_(1,3)^2+75*p_(1,4)^2+13*p_(2,3)^2+43*p_(2,4)^2+8*p_(3,4)^2
 -- f = x01^2+2*x02^2+4*x03^2+5*x04^2+6*x12^2+11*x13^2+75*x14^2+13*x23^2+43*x24^2+8*x34^2
 
@@ -60,10 +61,15 @@ assert isSmooth(ideal f,IsGraded=>true)
 print "Divisibility check"
 
 -- check Fern and my vanishings
-for t from 1 to n //d do (
+for t from 1 to min(n-1,n //d) do (
     print(t);
     assert not (n % (t*d)==0 and k*d*t % n == 0)
 );
+
+
+assert (gcd(k,n//d) == 1);
+assert (gcd(n-k,n//d) == 1); -- probably redundant?
+assert (n<5 or n % 2 == 0 or (k!=2 and k!= n-2) or (n+1)//2 % d != 0);
 
 
 countInversions = (perm) -> (
@@ -200,7 +206,6 @@ for i from 1 to n-1 do if (i==((2*n-1-d)/3) or i==((4*n-9-d)/3)) then print conc
 
 print "Expected Hodge numbers:"
 
-loadPackage "Schubert2"
 
 -- k = 3
 -- n = 7
@@ -210,7 +215,7 @@ loadPackage "Schubert2"
 
 
 
-G = flagBundle {k,n-k} -- secretly Gr(k,n)
+G = flagBundle {k,n-k}; -- secretly Gr(k,n)
 -- for d from 1 to 25 list (
 -- X = sectionZeroLocus(sum for i from 1 to #d list OO_G(i)); -- quadric and a cubic
 X = sectionZeroLocus(OO_G(d)); 
